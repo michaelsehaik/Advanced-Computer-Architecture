@@ -14,4 +14,41 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pipeline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sram.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dram.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="msi_bus.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="msi_bus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
