@@ -1,5 +1,18 @@
 #pragma once
 
+struct DSRAM {
+	int x;
+};
+
+struct TSRAM {
+	int x;
+};
+
+typedef struct SRAM {
+	MSI_BUS* bus;
+	struct DSRAM DSRAM;
+	struct TSRAM TSRAM;
+} SRAM;
 
 /*
 	structs for DSRAM and TSRAM.

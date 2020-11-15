@@ -7,6 +7,22 @@ enum PipelineRegisters { // indexes to buffer array
 	MEM_WB,
 };
 
+struct Buffer {
+	int rt;
+	int rs;
+	int rd;
+	int PC;
+	int simm;
+	int aluRes;
+	int memOut;
+};
+
+typedef struct Pipeline {
+	struct Buffer D[4];
+	struct Buffer Q[4];
+	bool stall[4];
+} Pipeline;
+
 /*
 	1. buffer struct:
 		- has all important fields (some of them are not relevant for all stages)
