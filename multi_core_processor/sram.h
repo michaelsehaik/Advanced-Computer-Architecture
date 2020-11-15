@@ -1,17 +1,27 @@
 #pragma once
 
-struct DSRAM {
-	int x;
+#include "msi_bus.h"
+
+#define DSRAM_SIZE 256
+#define TSRAM_SIZE 256
+
+enum MSI_STATE {
+	INVALID,
+	SHARED,
+	MODIFIED
 };
 
-struct TSRAM {
-	int x;
-};
+typedef struct TSRAM_CELL {
+	short tag;
+	enum MSI_STATE msi;
+} TSRAM_CELL;
 
 typedef struct SRAM {
 	MSI_BUS* bus;
-	struct DSRAM DSRAM;
-	struct TSRAM TSRAM;
+	int DSRAM[DSRAM_SIZE];
+	TSRAM_CELL TSRAM[TSRAM_SIZE];
+	char *dsramFilepath;
+	char *tsramFilepath;
 } SRAM;
 
 /*
@@ -25,3 +35,7 @@ typedef struct SRAM {
 		3. number of cache read misses
 		4. number of cache write misses
 */
+
+void sram__init(SRAM *SRAM, MSI_BUS* bus, char *dsramFilepath, char *tsramFilepath);
+void sram__update(SRAM *SRAM);
+void sram__terminate(SRAM *SRAM);

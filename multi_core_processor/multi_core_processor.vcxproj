@@ -129,6 +129,7 @@
     <ClCompile Include="dram.c" />
     <ClCompile Include="pipeline.c" />
     <ClCompile Include="sram.c" />
+    <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.h" />
@@ -136,6 +137,7 @@
     <ClInclude Include="msi_bus.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="sram.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

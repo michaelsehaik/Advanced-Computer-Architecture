@@ -1,10 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
+
 enum PipelineRegisters { // indexes to buffer array
 	FE_DE,
 	DE_EXE,
 	EXE_MEM,
 	MEM_WB,
+	NUM_OF_PIPELINE_REGS
 };
 
 struct Buffer {
@@ -15,6 +18,7 @@ struct Buffer {
 	int simm;
 	int aluRes;
 	int memOut;
+	bool valid;
 };
 
 typedef struct Pipeline {
@@ -35,3 +39,5 @@ typedef struct Pipeline {
 		1. number of cycles a pipeline stall was inserted in decode stage
 		2. number of cycles a pipeline stall was inserted in mem stage
 */
+
+void pipeline__init(Pipeline *pipeline);

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <stdio.h>
+
 typedef struct MSI_BUS {
-	int x;
+	FILE* busTraceFile;
 } MSI_BUS;
 
 /*
@@ -9,3 +11,7 @@ typedef struct MSI_BUS {
 	has methods for trace, sram/dram send request but they are not always valuated.
 	the struct updates after we simulated sram+dram for a clock cycle. 
 */
+
+void bus__update(MSI_BUS *bus);
+void bus__init(MSI_BUS *bus, const char *traceFilepath);
+void bus__terminate(MSI_BUS *bus);
