@@ -21,10 +21,29 @@ struct Buffer {
 	bool valid;
 };
 
+typedef struct DQ_FF {
+	int D;
+	int Q;
+}DQ_FF;
+
+struct FetchDecoderReg {
+	DQ_FF instruction;
+	DQ_FF PC;
+};
+
+struct DecoderExecuteReg {
+	DQ_FF A_val;
+	DQ_FF B_val;
+	DQ_FF rd;
+	DQ_FF opcode;
+};
+
 typedef struct Pipeline {
 	struct Buffer D[4];
 	struct Buffer Q[4];
 	bool stall[4];
+	struct FetchDecoderReg IF_ID;
+	struct DecoderExecuteReg ID_EX;
 } Pipeline;
 
 /*

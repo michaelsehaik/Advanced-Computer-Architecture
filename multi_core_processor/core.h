@@ -9,6 +9,8 @@
 #define REG_FILE_SIZE 16
 #define IMEM_SIZE 1024
 
+#define IMM_REG 1
+
 typedef struct Core {
 	SRAM SRAM;
 	Pipeline pipeline;

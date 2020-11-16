@@ -5,11 +5,35 @@ void initCore(Core *core) {
 
 }
 
-void doFetchStage(Core *core) {
+int signExtension(int imm) {
+	int signBit = imm & 0x800;
+	if (signBit == 0) {
+		return imm;
+	}
+	return imm | 0xFFFFF000;
+}
 
+void doFetchStage(Core *core) {
+	core->pipeline.IF_ID.instruction.D = core->Imem[core->PC];
+	core->pipeline.IF_ID.PC.D = core->PC;
+	core->PC++;
 }
 
 bool doDecodeStage(Core *core) {
+	int opcode = 0, rd = 0, rs = 0, rt = 0, imm = 0;
+	// decode instruction, set ^^ values
+	core->registers[IMM_REG] = signExtension(imm);
+	core->pipeline.ID_EX.A_val.D = core->registers[rs];
+	core->pipeline.ID_EX.B_val.D = core->registers[rt];
+	core->pipeline.ID_EX.rd.D = rd;
+	core->pipeline.ID_EX.opcode.D = opcode;
+	int needToJump; //Set according to branch commands comparison
+	int jumpDestination = core->registers[rd] & 0x03FF;
+	if (needToJump) {
+		//set PC
+	}
+
+
 	return false; // should we stall?
 }
 
