@@ -27,7 +27,7 @@ bool doDecodeStage(Core *core) {
 	core->pipeline.ID_EX.B_val.D = core->registers[rt];
 	core->pipeline.ID_EX.rd.D = rd;
 	core->pipeline.ID_EX.opcode.D = opcode;
-	int needToJump; //Set according to branch commands comparison
+	int needToJump = 1; //Set according to branch commands comparison
 	int jumpDestination = core->registers[rd] & 0x03FF;
 	if (needToJump) {
 		//set PC
