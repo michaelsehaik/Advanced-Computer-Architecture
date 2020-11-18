@@ -20,8 +20,13 @@ void doFetchStage(Core *core) {
 }
 
 bool doDecodeStage(Core *core) {
-	int opcode = 0, rd = 0, rs = 0, rt = 0, imm = 0;
 	// decode instruction, set ^^ values
+	int Instruction = core->pipeline.IF_ID.instruction.Q;
+	int opcode = (Instruction >> 24) & 0xFF;
+	int rd = (Instruction >> 20) & 0xF;
+	int rs = (Instruction >> 16) & 0xF;
+	int rt = (Instruction >> 12) & 0xF;
+	int imm = (Instruction >> 0) & 0xFFF;
 	core->registers[IMM_REG] = signExtension(imm);
 	core->pipeline.ID_EX.A_val.D = core->registers[rs];
 	core->pipeline.ID_EX.B_val.D = core->registers[rt];
@@ -30,18 +35,22 @@ bool doDecodeStage(Core *core) {
 	int needToJump = 1; //Set according to branch commands comparison
 	int jumpDestination = core->registers[rd] & 0x03FF;
 	if (needToJump) {
-		//set PC
+		core->PC = jumpDestination;
 	}
-
-
 	return false; // should we stall?
 }
 
 void doExecuteStage(Core *core) {
-
+	int aluRes = 0;// Call to ALU function base or opcode
+	core->pipeline.EX_MEM.aluRes.D = aluRes;
+	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;
 }
 
 bool doMemStage(Core *core) {
+	//if (opcode == lw) {
+	//	int loadVal = 0; // = lw()
+	//}
+
 	// see if we are waiting for bus
 	// update pipeline regs if needed
 	// call sendRequest(...) method of bus - this does not mean request is granted because of priorities!

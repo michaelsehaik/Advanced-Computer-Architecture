@@ -38,12 +38,21 @@ struct DecoderExecuteReg {
 	DQ_FF opcode;
 };
 
+struct ExecuteMemoryReg {
+	DQ_FF aluRes;
+	DQ_FF rd;
+};
+
+struct MemoryWriteBackReg{
+	DQ_FF rd;
+};
+
 typedef struct Pipeline {
-	struct Buffer D[4];
-	struct Buffer Q[4];
-	bool stall[4];
 	struct FetchDecoderReg IF_ID;
 	struct DecoderExecuteReg ID_EX;
+	struct ExecuteMemoryReg EX_MEM;
+	struct MemoryWriteBackReg MEM_WB;
+	bool stall[4];
 } Pipeline;
 
 /*
@@ -60,3 +69,8 @@ typedef struct Pipeline {
 */
 
 void pipeline__init(Pipeline *pipeline);
+
+/**
+* update pipeline registers, for each register, move D values to Q values
+*/
+void pipeline__update(Pipeline* pipeline);
