@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	char *memout_file = NULL, *regout_file = NULL;
 	int numOfCycles = 0;	// this is given as a pointer to all modules
 	bool halt = false;
-
+		
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file);
 

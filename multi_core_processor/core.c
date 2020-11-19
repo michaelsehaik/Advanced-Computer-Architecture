@@ -14,12 +14,14 @@ int signExtension(int imm) {
 }
 
 void doFetchStage(Core *core) {
+	// FIXME : if stall return;
 	core->pipeline.IF_ID.instruction.D = core->Imem[core->PC];
 	core->pipeline.IF_ID.PC.D = core->PC;
 	core->PC++;
 }
 
 bool doDecodeStage(Core *core) {
+	// FIXME : if stall return;
 	// decode instruction, set ^^ values
 	int Instruction = core->pipeline.IF_ID.instruction.Q;
 	int opcode = (Instruction >> 24) & 0xFF;
@@ -41,12 +43,14 @@ bool doDecodeStage(Core *core) {
 }
 
 void doExecuteStage(Core *core) {
+	// FIXME : if stall return;
 	int aluRes = 0;// Call to ALU function base or opcode
 	core->pipeline.EX_MEM.aluRes.D = aluRes;
 	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;
 }
 
 bool doMemStage(Core *core) {
+	// FIXME : if stall return; (need to check with sram somehow)
 	//if (opcode == lw) {
 	//	int loadVal = 0; // = lw()
 	//}
@@ -58,13 +62,13 @@ bool doMemStage(Core *core) {
 }
 
 void doWriteBackStage(Core *core) {
-
+	// FIXME : if stall return;
 }
 
 bool executeStep(Core *core) {
 	bool halt = false;
-	// if not stalled
-		doFetchStage(core);
+	
+	doFetchStage(core);
 	doDecodeStage(core);	// do we need to stall D+F?
 	doExecuteStage(core);
 	doMemStage(core);		// do we need to stall pipeline?
