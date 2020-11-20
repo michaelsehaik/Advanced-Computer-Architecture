@@ -14,47 +14,41 @@ int signExtension(int imm) {
 }
 
 void doFetchStage(Core *core) {
-	// FIXME : if stall return;
 	core->pipeline.IF_ID.instruction.D = core->Imem[core->PC];
 	core->pipeline.IF_ID.PC.D = core->PC;
 	core->PC++;
 }
 
 bool doDecodeStage(Core *core) {
-	// FIXME : if stall return;
+	int rd = 0, rs = 0, rt = 0, imm = 0;
+	OpCodes opcode;
 	// decode instruction, set ^^ values
 	int Instruction = core->pipeline.IF_ID.instruction.Q;
-	int opcode = (Instruction >> 24) & 0xFF;
-	int rd = (Instruction >> 20) & 0xF;
-	int rs = (Instruction >> 16) & 0xF;
-	int rt = (Instruction >> 12) & 0xF;
-	int imm = (Instruction >> 0) & 0xFFF;
+	opcode = (Instruction >> 24) & 0xFF;
+	rd = (Instruction >> 20) & 0xF;
+	rs = (Instruction >> 16) & 0xF;
+	rt = (Instruction >> 12) & 0xF;
+	imm = (Instruction >> 0) & 0xFFF;
 	core->registers[IMM_REG] = signExtension(imm);
 	core->pipeline.ID_EX.A_val.D = core->registers[rs];
 	core->pipeline.ID_EX.B_val.D = core->registers[rt];
 	core->pipeline.ID_EX.rd.D = rd;
 	core->pipeline.ID_EX.opcode.D = opcode;
-	int needToJump = 1; //Set according to branch commands comparison
+	int needToJump = 0; //Set according to branch commands comparison
+	needToJump = calcNeedToJump(core);
 	int jumpDestination = core->registers[rd] & 0x03FF;
 	if (needToJump) {
-		core->PC = jumpDestination;
+		//set PC
 	}
+
 	return false; // should we stall?
 }
 
 void doExecuteStage(Core *core) {
-	// FIXME : if stall return;
-	int aluRes = 0;// Call to ALU function base or opcode
-	core->pipeline.EX_MEM.aluRes.D = aluRes;
-	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;
+
 }
 
 bool doMemStage(Core *core) {
-	// FIXME : if stall return; (need to check with sram somehow)
-	//if (opcode == lw) {
-	//	int loadVal = 0; // = lw()
-	//}
-
 	// see if we are waiting for bus
 	// update pipeline regs if needed
 	// call sendRequest(...) method of bus - this does not mean request is granted because of priorities!
@@ -62,13 +56,13 @@ bool doMemStage(Core *core) {
 }
 
 void doWriteBackStage(Core *core) {
-	// FIXME : if stall return;
+
 }
 
 bool executeStep(Core *core) {
 	bool halt = false;
-	
-	doFetchStage(core);
+	// if not stalled
+		doFetchStage(core);
 	doDecodeStage(core);	// do we need to stall D+F?
 	doExecuteStage(core);
 	doMemStage(core);		// do we need to stall pipeline?
@@ -108,4 +102,88 @@ void core__terminate(Core *core) {
 	sram__terminate(&core->SRAM);
 	fclose(core->traceFile);
 	fclose(core->statsFile);
+}
+
+void add(Core *core)
+{
+}
+
+void sub(Core *core)
+{
+}
+
+void and(Core *core)
+{
+}
+
+void or (Core *core)
+{
+}
+
+void xor(Core *core)
+{
+}
+
+void mul(Core *core)
+{
+}
+
+void sll(Core *core)
+{
+}
+
+void sra(Core *core)
+{
+}
+
+void srl(Core *core)
+{
+}
+
+void beq(Core *core)
+{
+}
+
+void bne(Core *core)
+{
+}
+
+void blt(Core *core)
+{
+}
+
+void bgt(Core *core)
+{
+}
+
+void ble(Core *core)
+{
+}
+
+void bge(Core *core)
+{
+}
+
+void jal(Core *core)
+{
+}
+
+void lw(Core *core)
+{
+}
+
+void sw(Core *core)
+{
+}
+
+void ll(Core *core)
+{
+}
+
+void sc(Core *core)
+{
+}
+
+void halt(Core *core)
+{
 }
