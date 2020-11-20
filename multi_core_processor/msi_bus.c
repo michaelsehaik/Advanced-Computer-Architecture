@@ -1,7 +1,8 @@
 #include "msi_bus.h"
 
 void updateBusTrace(MSI_BUS *bus) {
-	//TODO
+	fprintf(bus->traceFile, "%d %X %X %05X %08X", 
+			bus->clock->cycle, bus->origID, bus->command, bus->address, bus->data);
 }
 
 void bus__update(MSI_BUS *bus) {
@@ -9,11 +10,12 @@ void bus__update(MSI_BUS *bus) {
 	updateBusTrace(bus);
 }
 
-void bus__init(MSI_BUS *bus, const char *traceFilepath) {
+void bus__init(MSI_BUS *bus, char *traceFilepath, Clock *clock) {
 	// TODO
-	fopen_s(&bus->busTraceFile, traceFilepath, "w");
+	bus->clock = clock;
+	fopen_s(&bus->traceFile, traceFilepath, "w");
 }
 
 void bus__terminate(MSI_BUS *bus) {
-	fclose(bus->busTraceFile);
+	fclose(bus->traceFile);
 }

@@ -2,8 +2,25 @@
 
 #include <stdio.h>
 
+#include "util.h"
+
+#define WORD_ADDRESS_MASK 0xFFFFF // 20 bits
+
+enum OriginatorID {
+	CORE0, CORE1, CORE2, CORE3, MAIN_MEMORY
+};
+
+enum BusCommand {
+	NO_COMMAND, BUS_RD, BUSRDX, FLUSH
+};
+
 typedef struct MSI_BUS {
-	FILE* busTraceFile;
+	FILE* traceFile;
+	enum OriginatorID origID;
+	enum BusCommand command;
+	int address;
+	int data;
+	Clock *clock;
 } MSI_BUS;
 
 /*
@@ -13,5 +30,5 @@ typedef struct MSI_BUS {
 */
 
 void bus__update(MSI_BUS *bus);
-void bus__init(MSI_BUS *bus, const char *traceFilepath);
+void bus__init(MSI_BUS *bus, char *traceFilepath, Clock *clock);
 void bus__terminate(MSI_BUS *bus);

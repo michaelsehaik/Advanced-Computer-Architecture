@@ -6,17 +6,19 @@ void dram__update(DRAM *DRAM) {
 }
 
 
-void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilepath) {
+void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilepath, Clock *clock) {
 	DRAM->bus = bus;
+	DRAM->clock = clock;
 	DRAM->memoutFilepath = memoutFilepath;
+	memset(DRAM->mem, 0, DRAM_SIZE * sizeof(int));
 
 	FILE *meminFile = NULL;
-	fopen_s(&meminFile, meminFilepath, "r", DRAM_SIZE);
-	memset(DRAM->mem, 0, DRAM_SIZE*sizeof(int));
-	loadArrayFromFile(meminFile, DRAM->mem, DRAM_SIZE);
+	fopen_s(&meminFile, meminFilepath, "r");
+	DRAM->lastAddr = loadArrayFromFile(meminFile, DRAM->mem, DRAM_SIZE);
 	fclose(meminFile);
 }
 
 void dram__terminate(DRAM *DRAM) {
 	// create trace file for memoutFilepath
+	arrayToFile(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr, true);
 }

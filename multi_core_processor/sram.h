@@ -5,6 +5,9 @@
 #define DSRAM_SIZE 256
 #define TSRAM_SIZE 256
 
+#define TAG_WIDTH 12
+#define MSI_WIDTH 2
+
 enum MSI_STATE {
 	INVALID,
 	SHARED,
@@ -12,8 +15,8 @@ enum MSI_STATE {
 };
 
 typedef struct TSRAM_CELL {
-	short tag;
-	enum MSI_STATE msi;
+	short tag : TAG_WIDTH;
+	enum MSI_STATE msi : MSI_WIDTH;
 } TSRAM_CELL;
 
 typedef struct SRAM {
@@ -22,6 +25,10 @@ typedef struct SRAM {
 	TSRAM_CELL TSRAM[TSRAM_SIZE];
 	char *dsramFilepath;
 	char *tsramFilepath;
+	int readHitCount;
+	int writeHitCount;
+	int readMissCount;
+	int writeMissCount;
 } SRAM;
 
 /*

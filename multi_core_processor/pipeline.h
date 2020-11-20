@@ -2,6 +2,15 @@
 
 #include <stdbool.h>
 
+enum PiplineStages {
+	FETCH,
+	DECODE,
+	EXEC,
+	MEM,
+	WB,
+	NUM_OF_STAGES
+};
+
 enum PipelineRegisters { // indexes to buffer array
 	FE_DE,
 	DE_EXE,
@@ -36,15 +45,18 @@ struct DecoderExecuteReg {
 	DQ_FF B_val;
 	DQ_FF rd;
 	DQ_FF opcode;
+	DQ_FF PC;
 };
 
 struct ExecuteMemoryReg {
 	DQ_FF aluRes;
 	DQ_FF rd;
+	DQ_FF PC;
 };
 
 struct MemoryWriteBackReg{
 	DQ_FF rd;
+	DQ_FF PC;
 };
 
 typedef struct Pipeline {
@@ -52,7 +64,7 @@ typedef struct Pipeline {
 	struct DecoderExecuteReg ID_EX;
 	struct ExecuteMemoryReg EX_MEM;
 	struct MemoryWriteBackReg MEM_WB;
-	bool stall[4];
+	bool stall[NUM_OF_STAGES];
 } Pipeline;
 
 /*

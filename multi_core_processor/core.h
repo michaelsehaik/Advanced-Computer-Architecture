@@ -5,6 +5,7 @@
 
 #include "sram.h"
 #include "pipeline.h"
+#include "util.h"
 
 #define REG_FILE_SIZE 16
 #define IMEM_SIZE 1024
@@ -20,7 +21,12 @@ typedef struct Core {
 	bool waitForSRAM;
 	bool waitForWB;
 	FILE *traceFile;
-	FILE *statsFile;
+	char *statsFilepath;
+	char* regoutFilepath;
+	int instructionCount;
+	int decodeStallCount;
+	int memStallCount;
+	Clock *clock;
 } Core;
 
 /*
@@ -39,6 +45,14 @@ typedef struct Core {
 		2. number of instructions executed
 */
 
-void core__init(Core *core, MSI_BUS* bus, char *imemFilepath, char *traceFilepath, char *dsramFilepath, char *tsramFilepath, char *statsFilepath);
+void core__init(Core *core,
+				MSI_BUS* bus,
+				char *ImemFilepath,
+				char *traceFilepath,
+				char *dsramFilepath,
+				char *tsramFilepath,
+				char *statsFilepath,
+				char *regoutFilepath,
+				Clock *clock);
 bool core__update(Core *core);
 void core__terminate(Core *core);
