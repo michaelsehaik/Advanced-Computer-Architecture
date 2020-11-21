@@ -43,14 +43,19 @@ void doExecuteStage(Core *core) {
 	int aluRes = 0;// Call to ALU function base or opcode
 	core->pipeline.EX_MEM.aluRes.D = aluRes;
 	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;
+	core->pipeline.EX_MEM.opcode.D = core->pipeline.ID_EX.opcode.Q;
 }
 
 bool doMemStage(Core *core) {
 	// FIXME : if stall return; (need to check with sram somehow)
-	//if (opcode == lw) {
-	//	int loadVal = 0; // = lw()
+	//if (core->pipeline.EX_MEM.opcode.Q == lw) {
+	//	core->pipeline.MEM_WB.memValue.D = 0; // = lw()
+	//} else if(core->pipeline.EX_MEM.opcode.Q == sw){
+	//	call sw()
 	//}
-
+	core->pipeline.MEM_WB.aluRes.D = core->pipeline.EX_MEM.aluRes.Q;
+	core->pipeline.MEM_WB.rd.D = core->pipeline.EX_MEM.rd.Q;
+	core->pipeline.MEM_WB.opcode.D = core->pipeline.EX_MEM.opcode.Q;
 	// see if we are waiting for bus
 	// update pipeline regs if needed
 	// call sendRequest(...) method of bus - this does not mean request is granted because of priorities!
