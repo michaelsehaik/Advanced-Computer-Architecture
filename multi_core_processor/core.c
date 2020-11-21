@@ -1,10 +1,6 @@
 #include "core.h"
 #include "util.h"
 
-void initCore(Core *core) {
-
-}
-
 int signExtension(int imm) {
 	int signBit = imm & 0x800;
 	if (signBit == 0) {
@@ -113,11 +109,11 @@ void core__init(Core *core,
 
 	pipeline__init(&core->pipeline);
 	sram__init(&core->SRAM, bus, dsramFilepath, tsramFilepath);
-	memset(core->registers, 0, REG_FILE_SIZE);
+	memset(core->registers, 0, REG_FILE_SIZE * sizeof(int));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC = 0;
-	core->waitForSRAM;
-	core->waitForWB;
+	core->waitForSRAM = false;
+	core->waitForWB = false;
 	core->regoutFilepath = regoutFilepath;
 	core->statsFilepath = statsFilepath;
 	core->clock = clock;
