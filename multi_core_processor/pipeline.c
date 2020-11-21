@@ -22,7 +22,7 @@ void register_DtoQ(DQ_FF* FFs, int numOfFF) {
 
 void pipeline__update(Pipeline* pipeline) {
 	register_DtoQ((DQ_FF*)(&pipeline->IF_ID), 2);
-	register_DtoQ((DQ_FF*)(&pipeline->ID_EX), 4);
-	register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), 3);
-	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), 4);
+	register_DtoQ((DQ_FF*)(&pipeline->ID_EX), 5);
+	register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), 4);
+	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), 5);
 }

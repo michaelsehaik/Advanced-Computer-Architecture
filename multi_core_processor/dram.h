@@ -7,7 +7,7 @@
 #define DRAM_SIZE 1048576 // 2^20 
 
 typedef struct DRAM{
-	int mem[DRAM_SIZE];
+	int mem[1]; // TODO: set this with malloc (DRAM_SIZE bytes)
 	MSI_BUS *bus;
 	char *memoutFilepath;
 	int lastAddr;				// TODO needs to hold the last non-zero address

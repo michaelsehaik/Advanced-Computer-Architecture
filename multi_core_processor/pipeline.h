@@ -45,12 +45,14 @@ struct DecoderExecuteReg {
 	DQ_FF B_val;
 	DQ_FF rd;
 	DQ_FF opcode;
+	DQ_FF PC;
 };
 
 struct ExecuteMemoryReg {
 	DQ_FF aluRes;
 	DQ_FF rd;
 	DQ_FF opcode;
+	DQ_FF PC;
 };
 
 struct MemoryWriteBackReg{
@@ -58,6 +60,7 @@ struct MemoryWriteBackReg{
 	DQ_FF memValue;
 	DQ_FF rd;
 	DQ_FF opcode;
+	DQ_FF PC;
 };
 
 typedef struct Pipeline {
