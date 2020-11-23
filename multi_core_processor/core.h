@@ -3,22 +3,25 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "sram.h"
+#include "cache.h"
 #include "pipeline.h"
-#include "util.h"
+#include "clock.h"
+#include "IO.h"
 
 #define REG_FILE_SIZE 16
 #define IMEM_SIZE 1024
 
 #define IMM_REG 1
 
+//TODO copy 2 enums from assembler.c or make new..
+
 typedef struct Core {
-	SRAM SRAM;
+	Cache cache;
 	Pipeline pipeline;
 	int registers[REG_FILE_SIZE];
 	int Imem[IMEM_SIZE];
 	int PC;
-	bool waitForSRAM;
+	bool waitForCache;
 	bool waitForWB;
 	FILE *traceFile;
 	char *statsFilepath;

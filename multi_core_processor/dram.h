@@ -1,13 +1,13 @@
 #pragma once
 
 #include "msi_bus.h"
-#include "util.h"
+#include "clock.h"
+#include "IO.h"
 
-// TODO is this too large for c array?
 #define DRAM_SIZE 1048576 // 2^20 
 
 typedef struct DRAM{
-	int mem[1]; // TODO: set this with malloc (DRAM_SIZE bytes)
+	int *mem; 
 	MSI_BUS *bus;
 	char *memoutFilepath;
 	int lastAddr;				// TODO needs to hold the last non-zero address

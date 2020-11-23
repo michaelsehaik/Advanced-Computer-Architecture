@@ -1,5 +1,4 @@
 #include "core.h"
-#include "util.h"
 
 int signExtension(int imm) {
 	int signBit = imm & 0x800;
@@ -47,7 +46,7 @@ void doExecuteStage(Core *core) {
 }
 
 bool doMemStage(Core *core) {
-	// FIXME : if stall return; (need to check with sram somehow)
+	// FIXME : if stall return; (need to check with cache somehow)
 	//if (core->pipeline.EX_MEM.opcode.Q == lw) {
 	//	core->pipeline.MEM_WB.memValue.D = 0; // = lw()
 	//} else if(core->pipeline.EX_MEM.opcode.Q == sw){
@@ -89,14 +88,14 @@ void updateCoreTrace(Core *core) {
 	printPC(core, core->pipeline.stall[EXEC], core->pipeline.ID_EX.PC.Q);
 	printPC(core, core->pipeline.stall[MEM], core->pipeline.EX_MEM.PC.Q);
 	printPC(core, core->pipeline.stall[WB], core->pipeline.MEM_WB.PC.Q);
-	arrayToFile(core->regoutFilepath, core->registers, REG_FILE_SIZE, false);
+	printArray(core->traceFile, &core->registers[2], REG_FILE_SIZE-2, false); //TODO change registers[2] to R2 enum
 	fprintf(core->traceFile, "\n");
 }
 
 bool core__update(Core *core) {
 	bool halt;
 	updateCoreTrace(core);
-	sram__update(&core->SRAM);
+	cache__update(&core->cache);
 	halt = executeStep(core);
 
 	return halt;
@@ -113,11 +112,11 @@ void core__init(Core *core,
 				Clock *clock) { 
 
 	pipeline__init(&core->pipeline);
-	sram__init(&core->SRAM, bus, dsramFilepath, tsramFilepath);
+	cache__init(&core->cache, bus, dsramFilepath, tsramFilepath);
 	memset(core->registers, 0, REG_FILE_SIZE * sizeof(int));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC = 0;
-	core->waitForSRAM = false;
+	core->waitForCache = false;
 	core->waitForWB = false;
 	core->regoutFilepath = regoutFilepath;
 	core->statsFilepath = statsFilepath;
@@ -126,6 +125,7 @@ void core__init(Core *core,
 	core->decodeStallCount = 0;
 	core->memStallCount = 0;
 
+	fopen_s(&core->traceFile, traceFilepath, "w");
 	FILE *ImemFile = NULL;
 	fopen_s(&ImemFile, ImemFilepath, "r");
 	loadArrayFromFile(ImemFile, core->Imem, IMEM_SIZE);
@@ -137,18 +137,18 @@ void printStatsFile(Core *core) {
 	fopen_s(&statsFile, core->statsFilepath, "w");
 	fprintf(statsFile, "cycles %d\n", core->clock->cycle);
 	fprintf(statsFile, "instructions %d\n", core->instructionCount);
-	fprintf(statsFile, "read_hit %d\n", core->SRAM.readHitCount);
-	fprintf(statsFile, "write_hit %d\n", core->SRAM.writeHitCount);
-	fprintf(statsFile, "read_miss %d\n", core->SRAM.readMissCount);
-	fprintf(statsFile, "write_miss %d\n", core->SRAM.writeMissCount);
+	fprintf(statsFile, "read_hit %d\n", core->cache.readHitCount);
+	fprintf(statsFile, "write_hit %d\n", core->cache.writeHitCount);
+	fprintf(statsFile, "read_miss %d\n", core->cache.readMissCount);
+	fprintf(statsFile, "write_miss %d\n", core->cache.writeMissCount);
 	fprintf(statsFile, "decode_stall %d\n", core->decodeStallCount);
 	fprintf(statsFile, "mem_stall %d\n", core->memStallCount);
 	fclose(statsFile);
 }
 
 void core__terminate(Core *core) {
-	sram__terminate(&core->SRAM);
+	cache__terminate(&core->cache);
 	fclose(core->traceFile);
-	arrayToFile(core->regoutFilepath, core->registers, REG_FILE_SIZE, true);
+	createFileFromArray(core->regoutFilepath, &core->registers[2], REG_FILE_SIZE-2, true); //TODO change registers[2] to R2 enum
 	printStatsFile(core);
 }
