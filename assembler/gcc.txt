@@ -1,1 +1,0 @@
-gcc -Wall -Werror assembler.c -o assembler
