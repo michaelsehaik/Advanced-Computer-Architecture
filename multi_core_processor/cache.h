@@ -1,6 +1,8 @@
 #pragma once
 
 #include "msi_bus.h"
+#include "clock.h"
+#include "IO.h"
 
 #define DSRAM_SIZE 256
 #define TSRAM_SIZE 256
@@ -19,7 +21,7 @@ typedef struct TSRAM_CELL {
 	enum MSI_STATE msi : MSI_WIDTH;
 } TSRAM_CELL;
 
-typedef struct SRAM {
+typedef struct Cache {
 	MSI_BUS* bus;
 	int DSRAM[DSRAM_SIZE];
 	TSRAM_CELL TSRAM[TSRAM_SIZE];
@@ -29,7 +31,7 @@ typedef struct SRAM {
 	int writeHitCount;
 	int readMissCount;
 	int writeMissCount;
-} SRAM;
+} Cache;
 
 /*
 	structs for DSRAM and TSRAM.
@@ -43,6 +45,6 @@ typedef struct SRAM {
 		4. number of cache write misses
 */
 
-void sram__init(SRAM *SRAM, MSI_BUS* bus, char *dsramFilepath, char *tsramFilepath);
-void sram__update(SRAM *SRAM);
-void sram__terminate(SRAM *SRAM);
+void cache__init(Cache *cache, MSI_BUS* bus, char *dsramFilepath, char *tsramFilepath);
+void cache__update(Cache *cache);
+void cache__terminate(Cache *cache);
