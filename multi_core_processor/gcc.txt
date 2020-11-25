@@ -1,1 +1,0 @@
-gcc -Wall main.c core.c pipeline.c sram.c msi_bus.c dram.c util.c -o sim

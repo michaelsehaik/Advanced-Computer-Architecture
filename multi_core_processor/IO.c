@@ -1,7 +1,28 @@
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <assert.h>
 
-#include "util.h"
+#include "IO.h"
+
+void fileExists(char *filename) {
+	struct stat buffer;
+	if (stat(filename, &buffer) != 0) {
+		printf("Input file %s does not exist. Aborting...", filename);
+		exit(1);
+	}
+}
+
+void checkFiles(char **filepaths) {
+	int fileIdx = 1;
+	while (filepaths[fileIdx] != NULL) {
+		if (fileIdx != MEMOUT_FILE && !(fileIdx >= REGS_FILE_BASE && fileIdx <= BUSTRACE_FILE) && fileIdx < STATS_FILE_BASE) {
+			fileExists(filepaths[fileIdx]);
+		}
+		fileIdx++;
+	}
+	assert(fileIdx == NUM_OF_FILENAMES);
+}
 
 int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	int numOfLines = 0;
@@ -10,13 +31,18 @@ int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	return numOfLines;
 }
 
-void arrayToFile(char* filepath, int valueArray[], int size, bool newline) {
-	FILE *outputFile = NULL;
-	fopen_s(&outputFile, filepath, "w");
+void printArray(FILE *outputFile, int valueArray[], int size, bool newline) {
 	for (int i = 0; i < size; i++) {
 		fprintf(outputFile, "%08X", valueArray[i]);
 		if (newline) fprintf(outputFile, "\n");
+		else fprintf(outputFile, " ");
 	}
+}
+
+void createFileFromArray(char* filepath, int valueArray[], int size, bool newline) {
+	FILE *outputFile = NULL;
+	fopen_s(&outputFile, filepath, "w");
+	printArray(outputFile, valueArray, size, newline);
 	fclose(outputFile);
 }
 
