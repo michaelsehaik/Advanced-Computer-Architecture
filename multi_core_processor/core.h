@@ -20,7 +20,7 @@ typedef struct Core {
 	Pipeline pipeline;
 	int registers[REG_FILE_SIZE];
 	int Imem[IMEM_SIZE];
-	int PC;
+	DQ_FF PC;
 	bool waitForCache;
 	bool waitForWB;
 	FILE *traceFile;
@@ -30,6 +30,7 @@ typedef struct Core {
 	int decodeStallCount;
 	int memStallCount;
 	Clock *clock;
+	bool halt;
 } Core;
 
 /*
@@ -59,3 +60,31 @@ void core__init(Core *core,
 				Clock *clock);
 bool core__update(Core *core);
 void core__terminate(Core *core);
+
+typedef enum { // indexes to buffer array
+	ADD,
+	SUB,
+	AND,
+	OR,
+	XOR,
+	MUL,
+	SLL,
+	SRA,
+	SRL,
+	BEQ,
+	BNE,
+	BLT,
+	BGT,
+	BLE,
+	BGE,
+	JAL,
+	LW,
+	SW,
+	LL,
+	SC,
+	HALT,
+}OpCode;
+
+int calcNeedToJump(Core* core, int R_rs, int R_rt, OpCode opcode);
+int calcAluRes(int A, int B, OpCode opcode);
+int memoryManage(Core* core);
