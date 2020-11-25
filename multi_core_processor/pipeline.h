@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+
 enum PiplineStages {
 	FETCH,
 	DECODE,

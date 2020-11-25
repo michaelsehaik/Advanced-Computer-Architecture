@@ -21,8 +21,8 @@ void register_DtoQ(DQ_FF* FFs, int numOfFF) {
 }
 
 void pipeline__update(Pipeline* pipeline) {
-	register_DtoQ((DQ_FF*)(&pipeline->IF_ID), 2);
-	register_DtoQ((DQ_FF*)(&pipeline->ID_EX), 5);
-	register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), 4);
-	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), 5);
+	register_DtoQ((DQ_FF*)(&pipeline->IF_ID), sizeof(struct FetchDecoderReg)/sizeof(DQ_FF));
+	register_DtoQ((DQ_FF*)(&pipeline->ID_EX), sizeof(struct DecoderExecuteReg) / sizeof(DQ_FF));
+	register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), sizeof(struct ExecuteMemoryReg) / sizeof(DQ_FF));
+	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
 }
