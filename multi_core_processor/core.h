@@ -88,3 +88,4 @@ typedef enum { // indexes to buffer array
 int calcNeedToJump(Core* core, int R_rs, int R_rt, OpCode opcode);
 int calcAluRes(int A, int B, OpCode opcode);
 int memoryManage(Core* core);
+bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt);
