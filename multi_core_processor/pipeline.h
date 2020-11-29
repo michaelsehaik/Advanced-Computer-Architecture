@@ -12,24 +12,6 @@ enum PiplineStages {
 	NUM_OF_STAGES
 };
 
-enum PipelineRegisters { // indexes to buffer array
-	FE_DE,
-	DE_EXE,
-	EXE_MEM,
-	MEM_WB,
-	NUM_OF_PIPELINE_REGS
-};
-
-struct Buffer {
-	int rt;
-	int rs;
-	int rd;
-	int PC;
-	int simm;
-	int aluRes;
-	int memOut;
-	bool valid;
-};
 
 typedef struct DQ_FF {
 	int D;
