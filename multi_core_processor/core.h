@@ -30,7 +30,6 @@ typedef struct Core {
 	int decodeStallCount;
 	int memStallCount;
 	Clock *clock;
-	bool halt;
 } Core;
 
 /*
@@ -58,7 +57,7 @@ void core__init(Core *core,
 				char *statsFilepath,
 				char *regoutFilepath,
 				Clock *clock);
-bool core__update(Core *core);
+void core__update(Core *core);
 void core__terminate(Core *core);
 
 typedef enum { // indexes to buffer array

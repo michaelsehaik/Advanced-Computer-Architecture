@@ -52,6 +52,7 @@ typedef struct Pipeline {
 	struct ExecuteMemoryReg EX_MEM;
 	struct MemoryWriteBackReg MEM_WB;
 	bool stall[NUM_OF_STAGES];
+	bool halt[NUM_OF_STAGES];
 } Pipeline;
 
 /*
