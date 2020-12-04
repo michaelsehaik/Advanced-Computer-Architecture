@@ -13,38 +13,47 @@ void doFetchStage(Core* core) {
 		core->pipeline.stall[FETCH] = true;
 		return;
 	}
-	if (!core->halt) {
+	if (!core->pipeline.halt[FETCH]) {
 		core->pipeline.stall[FETCH] = false;
 		core->pipeline.IF_ID.instruction.D = core->Imem[core->PC.Q];
 		core->pipeline.IF_ID.PC.D = core->PC.Q;
-		core->PC.D++;
+		if (core->PC.Q == core->PC.D) { // PC hasn't changed on decode stage
+			core->PC.D++;
+		}
+		if (core->pipeline.halt[DECODE]) {
+			core->pipeline.halt[FETCH] = true;
+		}
 	}
 }
 
-bool doDecodeStage(Core *core) {
+void doDecodeStage(Core *core) {
+	if (core->pipeline.halt[DECODE]) {
+		return;
+	}
 	if (core->pipeline.stall[EXEC]) {
 		core->pipeline.stall[DECODE] = true;
-		return false; // TODO: check this value
+		return;
 	}	
+	core->pipeline.ID_EX.PC.D = core->pipeline.IF_ID.PC.Q;
 	int Instruction = core->pipeline.IF_ID.instruction.Q;
 	OpCode opcode = (Instruction >> 24) & 0xFF;
 	int rd = (Instruction >> 20) & 0xF;
 	int rs = (Instruction >> 16) & 0xF;
 	int rt = (Instruction >> 12) & 0xF;
 	int imm = (Instruction >> 0) & 0xFFF;
-	if (opcode == HALT || core->halt) {
-		core->halt = true;
-		return false; // TODO: check this value
+	core->pipeline.ID_EX.opcode.D = opcode;
+	if (opcode == HALT) {
+		core->pipeline.halt[DECODE] = true;
+		return; 
 	}
 	core->pipeline.stall[DECODE] = checkDecodeStall(core, opcode, rd, rs, rt);
 	if (core->pipeline.stall[DECODE]) {
-		return false; // TODO: check this value
+		return false; 
 	}
 	core->registers[IMM_REG] = signExtension(imm);
 	core->pipeline.ID_EX.A_val.D = core->registers[rs];
 	core->pipeline.ID_EX.B_val.D = core->registers[rt];
 	core->pipeline.ID_EX.rd.D = rd;
-	core->pipeline.ID_EX.opcode.D = opcode;
 	int needToJump = calcNeedToJump(core, core->registers[rs], core->registers[rt], opcode); //Set according to branch commands comparison
 	if (needToJump) {
 		int jumpDestination = core->registers[rd] & 0x03FF;
@@ -54,40 +63,65 @@ bool doDecodeStage(Core *core) {
 }
 
 void doExecuteStage(Core *core) {
+	if (core->pipeline.halt[EXEC]) {
+		return;
+	}
 	if (core->pipeline.stall[MEM]) {
 		core->pipeline.stall[EXEC] = true;
 		return;
 	} 
-	core->pipeline.stall[EXEC] = false;
-	int aluRes = calcAluRes(core->pipeline.ID_EX.A_val.Q, core->pipeline.ID_EX.B_val.Q, core->pipeline.ID_EX.opcode.Q); // Call to ALU function base or opcode
-	core->pipeline.EX_MEM.aluRes.D = aluRes;
-	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;
+	OpCode opcode = core->pipeline.ID_EX.opcode.Q;
 	core->pipeline.EX_MEM.opcode.D = core->pipeline.ID_EX.opcode.Q;
+	if (opcode == HALT) {
+		core->pipeline.halt[EXEC] = true;
+		return;
+	}
+	core->pipeline.EX_MEM.PC.D = core->pipeline.ID_EX.PC.Q;
+	core->pipeline.stall[EXEC] = false;
+	int aluRes = calcAluRes(core->pipeline.ID_EX.A_val.Q, core->pipeline.ID_EX.B_val.Q, opcode); // Call to ALU function base or opcode
+	core->pipeline.EX_MEM.aluRes.D = aluRes;
+	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;	
 }
 
-bool doMemStage(Core *core) {
+void doMemStage(Core *core) {
+	if (core->pipeline.halt[MEM]) {
+		return;
+	}
+	OpCode opcode = core->pipeline.EX_MEM.opcode.Q;
+	core->pipeline.MEM_WB.opcode.D = core->pipeline.EX_MEM.opcode.Q;
+	if (opcode == HALT) {
+		core->pipeline.halt[MEM] = true;
+		return;
+	}
 	// FIXME : if stall return; (need to check with cache somehow)
 	// see if we are waiting for bus
 	// call sendRequest(...) method of bus - this does not mean request is granted because of priorities!
+	core->pipeline.MEM_WB.PC.D = core->pipeline.EX_MEM.PC.Q;
 	int memValue = memoryManage(core);
 	core->pipeline.MEM_WB.aluRes.D = core->pipeline.EX_MEM.aluRes.Q;
 	core->pipeline.MEM_WB.memValue.D = memValue;
 	core->pipeline.MEM_WB.rd.D = core->pipeline.EX_MEM.rd.Q;
-	core->pipeline.MEM_WB.opcode.D = core->pipeline.EX_MEM.opcode.Q;
-	return false; // sould we stall?
 }
 
 void doWriteBackStage(Core *core) {
+	if (core->pipeline.halt[WB]) {
+		return;
+	}
+	OpCode opcode = core->pipeline.MEM_WB.opcode.Q;
+	if (opcode == HALT) {
+		core->pipeline.halt[WB] = true;
+		return;
+	}
 	int rd = core->pipeline.MEM_WB.rd.Q;
 	if (rd == 0 || rd == 1) { // Can't write to reg0 and reg1
 		return;
 	}
-	OpCode opcode = core->pipeline.MEM_WB.opcode.Q;
 	switch (opcode)
 	{
 	case LW:
 	case LL: // check load linked
 		core->registers[rd] = core->pipeline.MEM_WB.memValue.Q;
+		break;
 	case ADD:
 	case SUB:
 	case AND:
@@ -98,43 +132,49 @@ void doWriteBackStage(Core *core) {
 	case SRA:
 	case SRL:
 		core->registers[rd] = core->pipeline.MEM_WB.aluRes.Q;
+		break;
 	default:
 		break;
 	}
 }
 
-bool executeStep(Core *core) {
-	doWriteBackStage(core);
-	doMemStage(core);		// do we need to stall pipeline?
-	doExecuteStage(core);
-	doDecodeStage(core);	// do we need to stall D+F?
+void executeStep(Core *core) {
+	if(core->clock->cycle > 3)
+		doWriteBackStage(core);
+	if (core->clock->cycle > 2)
+		doMemStage(core);		// do we need to stall pipeline?
+	if (core->clock->cycle > 1)
+		doExecuteStage(core);
+	if (core->clock->cycle > 0)
+		doDecodeStage(core);	// do we need to stall D+F?
 	doFetchStage(core);
-	return core->halt;
 }
 
-void printPC(Core *core, bool stall, int value) {
-	if (stall) fprintf(core->traceFile, "--- ");
+/*
+* Print PC to trace file, print --- if stage stalled or inactive (for the first lines if some stage hasn't start to work yet)
+*/
+void printPC(Core *core, bool stall, int value, bool active, bool halt) {
+	if (stall || !active || halt) fprintf(core->traceFile, "--- ");
 	else fprintf(core->traceFile, "%03X ", value);
 }
 
 void updateCoreTrace(Core *core) {
 	fprintf(core->traceFile, "%d ", core->clock->cycle);
-	printPC(core, core->pipeline.stall[FETCH], core->PC.Q);
-	printPC(core, core->pipeline.stall[DECODE], core->pipeline.IF_ID.PC.Q);
-	printPC(core, core->pipeline.stall[EXEC], core->pipeline.ID_EX.PC.Q);
-	printPC(core, core->pipeline.stall[MEM], core->pipeline.EX_MEM.PC.Q);
-	printPC(core, core->pipeline.stall[WB], core->pipeline.MEM_WB.PC.Q);
+	printPC(core, core->pipeline.stall[FETCH], core->PC.Q, true, core->pipeline.halt[FETCH]);
+	printPC(core, core->pipeline.stall[DECODE], core->pipeline.IF_ID.PC.Q, core->clock->cycle > 0, core->pipeline.halt[DECODE]);
+	printPC(core, core->pipeline.stall[EXEC], core->pipeline.ID_EX.PC.Q, core->clock->cycle > 1, core->pipeline.halt[EXEC]);
+	printPC(core, core->pipeline.stall[MEM], core->pipeline.EX_MEM.PC.Q, core->clock->cycle > 2, core->pipeline.halt[MEM]);
+	printPC(core, core->pipeline.stall[WB], core->pipeline.MEM_WB.PC.Q, core->clock->cycle > 3, core->pipeline.halt[WB]);
 	printArray(core->traceFile, &core->registers[2], REG_FILE_SIZE-2, false); //TODO change registers[2] to R2 enum
 	fprintf(core->traceFile, "\n");
 }
 
-bool core__update(Core *core) {
-	bool halt;
+void core__update(Core *core) {
 	updateCoreTrace(core);
 	cache__update(&core->cache);
-	halt = executeStep(core);
+	executeStep(core);
+	pipeline__update(&core->pipeline);
 	core->PC.Q = core->PC.D;
-	return halt;
 }
 
 void core__init(Core *core,
@@ -152,6 +192,7 @@ void core__init(Core *core,
 	memset(core->registers, 0, REG_FILE_SIZE * sizeof(int));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC.Q = 0;
+	core->PC.D = 0;
 	core->waitForCache = false;
 	core->waitForWB = false;
 	core->regoutFilepath = regoutFilepath;
@@ -276,11 +317,11 @@ bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) {
 	int rd_MEM_WB = core->pipeline.MEM_WB.rd.Q;
 	int rd_EX_MEM = core->pipeline.EX_MEM.rd.Q;
 	int rd_ID_EX = core->pipeline.ID_EX.rd.Q;
-	if(checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q)) // check if need to write to rd in WB stage
-		if (rd_MEM_WB == rs || rd_MEM_WB == rt) return true; // read register that should be writen before
-	if (checkWriteRdForOpcode(core->pipeline.EX_MEM.opcode.Q))
+	if(checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q) && core->clock->cycle > 3) // check if need to write to rd in WB stage
+		if (rd_MEM_WB == rs || rd_MEM_WB == rt ) return true; // read register that should be writen before
+	if (checkWriteRdForOpcode(core->pipeline.EX_MEM.opcode.Q) && core->clock->cycle > 2)
 		if (rd_EX_MEM == rs || rd_EX_MEM == rt) return true; // read register that should be writen before
-	if (checkWriteRdForOpcode(core->pipeline.ID_EX.opcode.Q))
+	if (checkWriteRdForOpcode(core->pipeline.ID_EX.opcode.Q) && core->clock->cycle > 1)
 		if (rd_ID_EX == rs || rd_ID_EX == rt) return true; // read register that should be writen before
 	
 	return false;
