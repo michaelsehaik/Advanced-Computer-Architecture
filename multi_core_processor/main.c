@@ -9,7 +9,6 @@
 #include "IO.h"
 
 void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout_file, char *regout_file, Clock *clock) {
-	
 	checkFiles(filepaths);
 	bus__init(bus, filepaths[BUSTRACE_FILE], clock);
 	dram__init(DRAM, bus, filepaths[MEMIN_FILE], filepaths[MEMOUT_FILE], clock);
@@ -39,9 +38,11 @@ int main(int argc, char **argv) {
 		halt = true;
 		bus__update(&bus);
 		dram__update(&DRAM);
-		for (int i = 0; i < 1; i++) {
-			core__update(&cores[i]);
-			halt &= cores[i].pipeline.halt[WB]; // false if at least one core hasn't finished yet
+		for (int i = 0; i < 2; i++) {
+			if (!cores[i].pipeline.halt[WB]) {
+				core__update(&cores[i]);
+				halt &= cores[i].pipeline.halt[WB]; // false if at least one core hasn't finished yet
+			}
 		}
 		clock.cycle++;
 	}

@@ -26,4 +26,11 @@ void pipeline__update(Pipeline* pipeline) {
 		register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), sizeof(struct ExecuteMemoryReg) / sizeof(DQ_FF));
 	if (!pipeline->stall[MEM])
 		register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
+	if (pipeline->ID_EX.bubble.D)
+		FF_DtoQ(&pipeline->ID_EX.bubble);
+	if (pipeline->EX_MEM.bubble.D)
+		FF_DtoQ(&pipeline->EX_MEM.bubble);
+	if (pipeline->MEM_WB.bubble.D)
+		FF_DtoQ(&pipeline->MEM_WB.bubble);
+
 }

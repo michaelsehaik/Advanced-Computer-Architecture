@@ -47,8 +47,10 @@ void doDecodeStage(Core *core) {
 		return; 
 	}
 	core->pipeline.stall[DECODE] = checkDecodeStall(core, opcode, rd, rs, rt);
+	core->pipeline.ID_EX.bubble.D = core->pipeline.stall[DECODE];
 	if (core->pipeline.stall[DECODE]) {
-		return false; 
+		core->pipeline.ID_EX.bubble.D = true;
+		return; 
 	}
 	core->registers[IMM_REG] = signExtension(imm);
 	core->pipeline.ID_EX.A_val.D = core->registers[rs];
@@ -59,24 +61,25 @@ void doDecodeStage(Core *core) {
 		int jumpDestination = core->registers[rd] & 0x03FF;
 		core->PC.D = jumpDestination;
 	}
-	return true; // should we stall?
+	return; 
 }
 
 void doExecuteStage(Core *core) {
 	if (core->pipeline.halt[EXEC]) {
 		return;
 	}
+	core->pipeline.EX_MEM.bubble.D = core->pipeline.ID_EX.bubble.Q;
 	if (core->pipeline.stall[MEM]) {
 		core->pipeline.stall[EXEC] = true;
 		return;
 	} 
 	OpCode opcode = core->pipeline.ID_EX.opcode.Q;
+	core->pipeline.EX_MEM.PC.D = core->pipeline.ID_EX.PC.Q;
 	core->pipeline.EX_MEM.opcode.D = core->pipeline.ID_EX.opcode.Q;
 	if (opcode == HALT) {
 		core->pipeline.halt[EXEC] = true;
 		return;
 	}
-	core->pipeline.EX_MEM.PC.D = core->pipeline.ID_EX.PC.Q;
 	core->pipeline.stall[EXEC] = false;
 	int aluRes = calcAluRes(core->pipeline.ID_EX.A_val.Q, core->pipeline.ID_EX.B_val.Q, opcode); // Call to ALU function base or opcode
 	core->pipeline.EX_MEM.aluRes.D = aluRes;
@@ -89,6 +92,8 @@ void doMemStage(Core *core) {
 	}
 	OpCode opcode = core->pipeline.EX_MEM.opcode.Q;
 	core->pipeline.MEM_WB.opcode.D = core->pipeline.EX_MEM.opcode.Q;
+	core->pipeline.MEM_WB.PC.D = core->pipeline.EX_MEM.PC.Q;
+	core->pipeline.MEM_WB.bubble.D = core->pipeline.EX_MEM.bubble.Q;
 	if (opcode == HALT) {
 		core->pipeline.halt[MEM] = true;
 		return;
@@ -96,7 +101,6 @@ void doMemStage(Core *core) {
 	// FIXME : if stall return; (need to check with cache somehow)
 	// see if we are waiting for bus
 	// call sendRequest(...) method of bus - this does not mean request is granted because of priorities!
-	core->pipeline.MEM_WB.PC.D = core->pipeline.EX_MEM.PC.Q;
 	int memValue = memoryManage(core);
 	core->pipeline.MEM_WB.aluRes.D = core->pipeline.EX_MEM.aluRes.Q;
 	core->pipeline.MEM_WB.memValue.D = memValue;
@@ -160,11 +164,11 @@ void printPC(Core *core, bool stall, int value, bool active, bool halt) {
 
 void updateCoreTrace(Core *core) {
 	fprintf(core->traceFile, "%d ", core->clock->cycle);
-	printPC(core, core->pipeline.stall[FETCH], core->PC.Q, true, core->pipeline.halt[FETCH]);
-	printPC(core, core->pipeline.stall[DECODE], core->pipeline.IF_ID.PC.Q, core->clock->cycle > 0, core->pipeline.halt[DECODE]);
-	printPC(core, core->pipeline.stall[EXEC], core->pipeline.ID_EX.PC.Q, core->clock->cycle > 1, core->pipeline.halt[EXEC]);
-	printPC(core, core->pipeline.stall[MEM], core->pipeline.EX_MEM.PC.Q, core->clock->cycle > 2, core->pipeline.halt[MEM]);
-	printPC(core, core->pipeline.stall[WB], core->pipeline.MEM_WB.PC.Q, core->clock->cycle > 3, core->pipeline.halt[WB]);
+	printPC(core, 0, core->PC.Q, true, core->pipeline.halt[FETCH]);
+	printPC(core, 0, core->pipeline.IF_ID.PC.Q, core->clock->cycle > 0, core->pipeline.halt[DECODE]);
+	printPC(core, core->pipeline.ID_EX.bubble.Q, core->pipeline.ID_EX.PC.Q, core->clock->cycle > 1, core->pipeline.halt[EXEC]);
+	printPC(core, core->pipeline.EX_MEM.bubble.Q, core->pipeline.EX_MEM.PC.Q, core->clock->cycle > 2, core->pipeline.halt[MEM]);
+	printPC(core, core->pipeline.MEM_WB.bubble.Q, core->pipeline.MEM_WB.PC.Q, core->clock->cycle > 3, core->pipeline.halt[WB]);
 	printArray(core->traceFile, &core->registers[2], REG_FILE_SIZE-2, false); //TODO change registers[2] to R2 enum
 	fprintf(core->traceFile, "\n");
 }
@@ -174,6 +178,7 @@ void core__update(Core *core) {
 	cache__update(&core->cache);
 	executeStep(core);
 	pipeline__update(&core->pipeline);
+	printf("%d %d\n", core->pipeline.ID_EX.bubble.D, core->pipeline.ID_EX.bubble.Q);
 	core->PC.Q = core->PC.D;
 }
 
