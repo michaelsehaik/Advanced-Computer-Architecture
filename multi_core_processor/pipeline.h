@@ -29,6 +29,7 @@ struct DecoderExecuteReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF bubble;
 };
 
 struct ExecuteMemoryReg {
@@ -36,6 +37,7 @@ struct ExecuteMemoryReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF bubble;
 };
 
 struct MemoryWriteBackReg{
@@ -44,6 +46,7 @@ struct MemoryWriteBackReg{
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF bubble;
 };
 
 typedef struct Pipeline {
