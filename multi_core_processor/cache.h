@@ -1,32 +1,61 @@
 #pragma once
 
+#include <stdio.h>
+#include <stddef.h>
+
 #include "msi_bus.h"
 #include "clock.h"
 #include "IO.h"
 
-#define DSRAM_SIZE 256
-#define TSRAM_SIZE 256
+#define CACHE_SIZE 256
 
+#define INDEX_WIDTH 8
 #define TAG_WIDTH 12
 #define MSI_WIDTH 2
 
 enum MSI_STATE {
-	INVALID,
-	SHARED,
-	MODIFIED
+	INVALID_S,
+	SHARED_S,
+	MODIFIED_S
 };
+
+typedef enum CACHE_OPERATION_NAME{
+	LOAD_WORD,
+	LOAD_LINKED,
+	STORE_WORD,
+	STORE_CONDITIONAL
+} CACHE_OPERATION_NAME;
+
+typedef struct CacheOperation {
+	CACHE_OPERATION_NAME name;
+	int data;
+	int address;
+} CacheOperation;
+
+typedef enum CACHE_STATE {
+	IDLE_S,
+	FLUSH_S,
+	SEND_READ_S,
+	WAIT_READ_S,
+	DATA_READY_S,
+	DONE_S,
+	SC_FAILED_S
+} CACHE_STATE;
 
 typedef struct TSRAM_CELL {
 	short tag : TAG_WIDTH;
-	enum MSI_STATE msi : MSI_WIDTH;
+	enum MSI_STATE MSIState : MSI_WIDTH;
 } TSRAM_CELL;
 
 typedef struct Cache {
 	MSI_BUS* bus;
-	int DSRAM[DSRAM_SIZE];
-	TSRAM_CELL TSRAM[TSRAM_SIZE];
+	int DSRAM[CACHE_SIZE];
+	TSRAM_CELL TSRAM[CACHE_SIZE];
 	char *dsramFilepath;
 	char *tsramFilepath;
+	OriginatorID origID;
+	CacheOperation curOperation;
+	CACHE_STATE state;
 	int readHitCount;
 	int writeHitCount;
 	int readMissCount;
@@ -45,6 +74,8 @@ typedef struct Cache {
 		4. number of cache write misses
 */
 
-void cache__init(Cache *cache, MSI_BUS* bus, char *dsramFilepath, char *tsramFilepath);
+void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
+void cache__snoop(Cache *cache);
+void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath);
 void cache__update(Cache *cache);
 void cache__terminate(Cache *cache);

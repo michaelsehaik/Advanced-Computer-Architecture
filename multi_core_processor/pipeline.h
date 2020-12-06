@@ -3,14 +3,14 @@
 #include <stdbool.h>
 
 
-enum PiplineStages {
+typedef enum PiplineStage {
 	FETCH,
 	DECODE,
 	EXEC,
 	MEM,
 	WB,
 	NUM_OF_STAGES
-};
+} PiplineStage;
 
 
 typedef struct DQ_FF {
@@ -21,6 +21,7 @@ typedef struct DQ_FF {
 struct FetchDecoderReg {
 	DQ_FF instruction;
 	DQ_FF PC;
+	DQ_FF valid;
 };
 
 struct DecoderExecuteReg {
@@ -29,7 +30,7 @@ struct DecoderExecuteReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
-	DQ_FF bubble;
+	DQ_FF valid;
 };
 
 struct ExecuteMemoryReg {
@@ -37,16 +38,17 @@ struct ExecuteMemoryReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
-	DQ_FF bubble;
+	DQ_FF valid;
 };
 
 struct MemoryWriteBackReg{
 	DQ_FF aluRes;
 	DQ_FF memValue;
 	DQ_FF rd;
+	DQ_FF memOpSuccess;
 	DQ_FF opcode;
 	DQ_FF PC;
-	DQ_FF bubble;
+	DQ_FF valid;
 };
 
 typedef struct Pipeline {
@@ -72,6 +74,7 @@ typedef struct Pipeline {
 */
 
 void pipeline__init(Pipeline *pipeline);
+void pipeline__setStall(Pipeline *pipeline, PiplineStage stage, bool value);
 
 /**
 * update pipeline registers, for each register, move D values to Q values

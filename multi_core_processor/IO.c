@@ -26,9 +26,9 @@ void checkFiles(char **filepaths) {
 
 int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	int numOfLines = 0;
-	while (fscanf(file, "%x\n", &valuesArray[numOfLines++]) != 0 && numOfLines < size);
+	while (fscanf(file, "%x\n", &valuesArray[numOfLines++]) > 0 && numOfLines < size);
 	fseek(file, 0, SEEK_SET); // move pointer back to begginnig of file
-	return numOfLines;
+	return numOfLines - 1;
 }
 
 void printArray(FILE *outputFile, int valueArray[], int size, bool newline) {

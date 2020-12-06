@@ -13,7 +13,7 @@ void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout
 	bus__init(bus, filepaths[BUSTRACE_FILE], clock);
 	dram__init(DRAM, bus, filepaths[MEMIN_FILE], filepaths[MEMOUT_FILE], clock);
 	for (int i = 0; i < 4; i++) {
-		core__init(&cores[i], bus,
+		core__init(&cores[i], bus, i,
 								filepaths[IMEM_FILE_BASE + i],
 								filepaths[CORE_TRACE_FILE_BASE + i],
 								filepaths[DSRAM_FILE_BASE + i],
@@ -34,20 +34,40 @@ int main(int argc, char **argv) {
 
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file, &clock);
+	printf("Proccessor Initialization Completed\n");
+
 	while (!halt) {
 		halt = true;
-		bus__update(&bus);
-		dram__update(&DRAM);
-		for (int i = 0; i < 2; i++) {
+
+		for (int i = 0; i < 4; i++) {
 			if (!cores[i].pipeline.halt[WB]) {
+				printf("cache state: %d\n", cores[i].cache.state);
 				core__update(&cores[i]);
-				halt &= cores[i].pipeline.halt[WB]; // false if at least one core hasn't finished yet
+				halt &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
 			}
 		}
+
+		for (int i = 0; i < 4; i++) {
+			cache__snoop(&cores[i].cache);
+			//printf("state after snoop: %d\n", cores[i].cache.state);
+		}
+		dram__update(&DRAM);
+		for (int i = 0; i < 4; i++) {
+			cache__update(&cores[i].cache);
+		}
+
 		clock.cycle++;
+		bus__update(&bus);
+
+		// FIXME DEBUG:
+		if (clock.cycle % 1 == 0) {
+			printf("Clock Cycle: %d\n", clock.cycle);
+		}
+		if (clock.cycle > 2000) {
+			break;
+		}
 	}
 
-	// TODO terminate - free memory, close files and write tracefile
 	bus__terminate(&bus);
 	dram__terminate(&DRAM);
 	for (int i = 0; i < 4; i++)

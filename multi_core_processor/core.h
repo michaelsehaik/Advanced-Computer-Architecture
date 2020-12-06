@@ -13,53 +13,6 @@
 
 #define IMM_REG 1
 
-//TODO copy 2 enums from assembler.c or make new..
-
-typedef struct Core {
-	Cache cache;
-	Pipeline pipeline;
-	int registers[REG_FILE_SIZE];
-	int Imem[IMEM_SIZE];
-	DQ_FF PC;
-	bool waitForCache;
-	bool waitForWB;
-	FILE *traceFile;
-	char *statsFilepath;
-	char* regoutFilepath;
-	int instructionCount;
-	int decodeStallCount;
-	int memStallCount;
-	Clock *clock;
-} Core;
-
-/*
-	has 1 sram.
-	has a register file.
-	has 1 pipeline.
-	has PC.
-	has Imem.
-	main logic function:
-		1. checks (somehow) if still in stall and skips if true. (sram should have a funtion we can question if we are waiting for it)
-		2. calls update of each stage (input pipline.Q, output pipeline.D so no dependency on other stages)
-		3. update trace
-		 
-	has status struct to keep track over:
-		1. number of clock cycles the core was running till halt
-		2. number of instructions executed
-*/
-
-void core__init(Core *core,
-				MSI_BUS* bus,
-				char *ImemFilepath,
-				char *traceFilepath,
-				char *dsramFilepath,
-				char *tsramFilepath,
-				char *statsFilepath,
-				char *regoutFilepath,
-				Clock *clock);
-void core__update(Core *core);
-void core__terminate(Core *core);
-
 typedef enum { // indexes to buffer array
 	ADD,
 	SUB,
@@ -82,9 +35,37 @@ typedef enum { // indexes to buffer array
 	LL,
 	SC,
 	HALT,
-}OpCode;
+} OpCode;
 
-int calcNeedToJump(Core* core, int R_rs, int R_rt, OpCode opcode);
-int calcAluRes(int A, int B, OpCode opcode);
-int memoryManage(Core* core);
-bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt);
+typedef struct Core {
+	Cache cache;
+	Pipeline pipeline;
+	int registers[REG_FILE_SIZE];
+	int Imem[IMEM_SIZE];
+	DQ_FF PC;
+	bool waitForCache;
+	bool waitForWB;
+	FILE *traceFile;
+	char *statsFilepath;
+	char* regoutFilepath;
+	int instructionCount;
+	int decodeStallCount;
+	int memStallCount;
+	Clock *clock;
+	bool halt;
+	bool pipelineIsEmpty;
+} Core;
+
+void core__init(Core *core,
+				MSI_BUS* bus,
+				OriginatorID origID,
+				char *ImemFilepath,
+				char *traceFilepath,
+				char *dsramFilepath,
+				char *tsramFilepath,
+				char *statsFilepath,
+				char *regoutFilepath,
+				Clock *clock);
+void core__update(Core *core);
+void core__terminate(Core *core);
+
