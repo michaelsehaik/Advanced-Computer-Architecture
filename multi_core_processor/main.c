@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#include "clock.h"
+#include "util.h"
 #include "msi_bus.h"
 #include "pipeline.h"
 #include "cache.h"
@@ -30,23 +30,20 @@ int main(int argc, char **argv) {
 	DRAM DRAM;
 	char *memout_file = NULL, *regout_file = NULL;
 	Clock clock = (Clock){.cycle = 0};
-	bool halt = false;
+	bool done = false;
 
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	printf("Proccessor Initialization Completed\n");
 
-	while (!halt) {
-		halt = true;
+	while (!done) {
+		done = true;
 
-		for (int i = 0; i < 4; i++) {
-			if (!cores[i].pipeline.halt[WB]) {
-				printf("cache state: %d\n", cores[i].cache.state);
-				core__update(&cores[i]);
-				halt &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
-			}
+		if (clock.cycle % 1 == 0) {
+			printf("Clock Cycle: %d\n", clock.cycle);
 		}
 
+		bus__update(&bus);
 		for (int i = 0; i < 4; i++) {
 			cache__snoop(&cores[i].cache);
 			//printf("state after snoop: %d\n", cores[i].cache.state);
@@ -56,14 +53,16 @@ int main(int argc, char **argv) {
 			cache__update(&cores[i].cache);
 		}
 
-		clock.cycle++;
-		bus__update(&bus);
-
-		// FIXME DEBUG:
-		if (clock.cycle % 1 == 0) {
-			printf("Clock Cycle: %d\n", clock.cycle);
+		for (int i = 0; i < 4; i++) {
+			printf("cache state: %d\n", cores[i].cache.state);
+			core__update(&cores[i]);
+			done &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
 		}
-		if (clock.cycle > 2000) {
+
+		clock.cycle++;
+		
+		// FIXME DEBUG:
+		if (clock.cycle > 1000) {
 			break;
 		}
 	}

@@ -139,7 +139,7 @@
     <ClInclude Include="msi_bus.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="cache.h" />
-    <ClInclude Include="clock.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

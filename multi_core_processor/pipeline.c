@@ -4,13 +4,6 @@ void pipeline__init(Pipeline *pipeline) {
 	memset(pipeline, 0, sizeof(Pipeline));
 }
 
-void pipeline__setStall(Pipeline *pipeline, PiplineStage stage, bool value) {
-	while (stage >= 0) {
-		pipeline->stall[stage] = value;
-		stage--;
-	}
-}
-
 void FF_DtoQ(DQ_FF* FF) {
 	FF->Q = FF->D;
 }
@@ -25,12 +18,18 @@ void register_DtoQ(DQ_FF* FFs, int numOfFF) {
 }
 
 void pipeline__update(Pipeline* pipeline) {
-	if(!(pipeline->stall[DECODE] || pipeline->stall[MEM]))
+	if(!(pipeline->decodeStall || pipeline->memStall))
 		register_DtoQ((DQ_FF*)(&pipeline->IF_ID), sizeof(struct FetchDecoderReg)/sizeof(DQ_FF));
-	if (!(pipeline->stall[MEM]))
+	if (!(pipeline->memStall))
 		register_DtoQ((DQ_FF*)(&pipeline->ID_EX), sizeof(struct DecoderExecuteReg) / sizeof(DQ_FF));
-	if (!pipeline->stall[MEM])
+	if (!pipeline->memStall)
 		register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), sizeof(struct ExecuteMemoryReg) / sizeof(DQ_FF));
-	if (!pipeline->stall[MEM])
-		register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
+	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
+	
+	if (pipeline->decodeStall) {
+		pipeline->decodeStallCount++;
+	}
+	if (pipeline->memStall) {
+		pipeline->memStallCount++;
+	}
 }

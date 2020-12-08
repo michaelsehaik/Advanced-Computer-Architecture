@@ -88,18 +88,39 @@ bool checkWriteRdForOpcode(OpCode opcode) {
 	return false;
 }
 
+bool checkStoreOpcode(OpCode opcode) {
+
+	if (opcode == SW || opcode == SC) {
+		return true;
+	}
+	return false;
+}
+
 bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) { // FIXME: check valid part.
+	bool stall = false;
+	
 	int rd_MEM_WB = core->pipeline.MEM_WB.rd.Q;
 	int rd_EX_MEM = core->pipeline.EX_MEM.rd.Q;
 	int rd_ID_EX = core->pipeline.ID_EX.rd.Q;
-	if (checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q) && core->pipeline.MEM_WB.valid.Q) // check if need to write to rd in WB stage
-		if (rd_MEM_WB == rs || rd_MEM_WB == rt) return true; // read register that should be writen before
-	if (checkWriteRdForOpcode(core->pipeline.EX_MEM.opcode.Q) && core->pipeline.EX_MEM.valid.Q)
-		if (rd_EX_MEM == rs || rd_EX_MEM == rt) return true; // read register that should be writen before
-	if (checkWriteRdForOpcode(core->pipeline.ID_EX.opcode.Q) && core->pipeline.ID_EX.valid.Q)
-		if (rd_ID_EX == rs || rd_ID_EX == rt) return true; // read register that should be writen before
 
-	return false;
+	if (checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q) && core->pipeline.MEM_WB.valid.Q) { // check if need to write to rd in WB stage
+		if (rd_MEM_WB == rs || rd_MEM_WB == rt) stall = true; // read register that should be written before
+		if (checkStoreOpcode(opcode) && rd == rd_MEM_WB) stall = true; // store register that should be written before
+	}
+	if (checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q) && core->pipeline.EX_MEM.valid.Q) {
+		if (rd_EX_MEM == rs || rd_EX_MEM == rt) stall = true; // read register that should be written before
+		if (checkStoreOpcode(opcode) && rd == rd_EX_MEM) stall = true; // store register that should be written before
+	}
+	if (checkWriteRdForOpcode(core->pipeline.MEM_WB.opcode.Q) && core->pipeline.ID_EX.valid.Q) {
+		if (rd_ID_EX == rs || rd_ID_EX == rt) stall = true; // read register that should be written before
+		if (checkStoreOpcode(opcode) && rd == rd_ID_EX) stall = true; // store register that should be written before
+	}
+		
+
+	printf("rd=%d, rs=%d, rt=%d, rd_MEM_WB=%d, rd_EX_MEM=%d, rd_ID_EX=%d, valid=%d, stall=%d\n", rd, rs, rt, rd_MEM_WB, rd_EX_MEM, rd_ID_EX, core->pipeline.ID_EX.valid.Q, stall);
+
+	core->pipeline.decodeStall = stall;
+	return stall;
 }
 
 void doFetchStage(Core* core) {
@@ -107,7 +128,7 @@ void doFetchStage(Core* core) {
 		core->pipeline.IF_ID.valid.D = false;
 		return;
 	}
-	if (core->pipeline.stall[DECODE] || core->pipeline.stall[MEM]) {
+	if (core->pipeline.decodeStall || core->pipeline.memStall) {
 		return;
 	}
 	
@@ -120,7 +141,7 @@ void doFetchStage(Core* core) {
 }
 
 void doDecodeStage(Core *core) {
-	if (core->pipeline.stall[MEM]) {
+	if (core->pipeline.memStall) {
 		return;
 	}
 	if (!core->pipeline.IF_ID.valid.Q) {
@@ -143,8 +164,7 @@ void doDecodeStage(Core *core) {
 		return; 
 	}
 
-	core->pipeline.stall[DECODE] = checkDecodeStall(core, opcode, rd, rs, rt);
-	if (core->pipeline.stall[DECODE]) {
+	if (checkDecodeStall(core, opcode, rd, rs, rt)) {
 		core->pipeline.ID_EX.valid.D = false;
 		return; 
 	}
@@ -156,12 +176,13 @@ void doDecodeStage(Core *core) {
 	int needToJump = calcNeedToJump(core, core->registers[rs], core->registers[rt], opcode); //Set according to branch commands comparison
 	if (needToJump) {
 		int jumpDestination = core->registers[rd] & 0x03FF;
+		printf("dest: %d\n", jumpDestination);
 		core->PC.D = jumpDestination;
 	}
 }
 
 void doExecuteStage(Core *core) {
-	if (core->pipeline.stall[MEM]) {
+	if (core->pipeline.memStall) {
 		return;
 	}
 	if (!core->pipeline.ID_EX.valid.Q) {
@@ -184,16 +205,17 @@ void memoryManage(Core* core) {
 	int data = core->registers[core->pipeline.EX_MEM.rd.Q];
 
 	if (core->cache.state == IDLE_S) {
-		cache__setNewOperation(&core->cache, address, data, getCacheOpName(opcode));
-		if (core->cache.state == SC_FAILED_S) {
-			// TODO 
+		if (opcode == SC && !(address == core->linkRegister.address && core->linkRegister.flag)) {
+			core->registers[core->pipeline.EX_MEM.rd.Q] = 0; // failure
+			return;
 		}
-		core->pipeline.stall[MEM] = true;
+		cache__setNewOperation(&core->cache, address, data, getCacheOpName(opcode));
+		core->pipeline.memStall = true;
 		core->pipeline.MEM_WB.valid.D = false;
 	}
 	else if (core->cache.state == DONE_S) {
 		core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data;
-		core->pipeline.stall[MEM] = false;
+		core->pipeline.memStall = false;
 		core->pipeline.MEM_WB.valid.D = true;
 		printf("in DATA_READY_S\n");
 	}
@@ -213,6 +235,9 @@ void doMemStage(Core *core) {
 
 	if (opcode == LW || opcode == SW || opcode == LL || opcode == SC) {
 		memoryManage(core);
+	} 
+	else {
+		core->pipeline.MEM_WB.valid.D = true;
 	}
 }
 
@@ -275,14 +300,13 @@ void updateCoreTrace(Core *core) {
 	fprintf(core->traceFile, "\n");
 }
 
-
 void core__update(Core *core) {
 	if (!core->pipelineIsEmpty) {
-		updateCoreTrace(core);
 		executeStep(core);
+		updateCoreTrace(core);
 		pipeline__update(&core->pipeline);
 		core->PC.Q = core->PC.D;
-		if (core->halt && !core->pipeline.MEM_WB.valid.Q) {
+		if (core->halt && !core->pipeline.MEM_WB.valid.Q && core->cache.state == IDLE_S) {
 			core->pipelineIsEmpty = true;
 		}
 	}
@@ -300,21 +324,20 @@ void core__init(Core *core,
 				Clock *clock) { 
 
 	pipeline__init(&core->pipeline);
-	cache__init(&core->cache, bus, origID, dsramFilepath, tsramFilepath);
+	core->linkRegister.flag = false;
+	cache__init(&core->cache, bus, origID, dsramFilepath, tsramFilepath, &core->linkRegister);
 	memset(core->registers, 0, REG_FILE_SIZE * sizeof(int));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC.Q = 0;
 	core->PC.D = 0;
 	core->waitForCache = false;
 	core->waitForWB = false;
-	core->regoutFilepath = regoutFilepath;
-	core->statsFilepath = statsFilepath;
 	core->clock = clock;
 	core->instructionCount = 0;
-	core->decodeStallCount = 0;
-	core->memStallCount = 0;
 	core->halt = false;
 	core->pipelineIsEmpty = false;
+	core->regoutFilepath = regoutFilepath;
+	core->statsFilepath = statsFilepath;
 
 	fopen_s(&core->traceFile, traceFilepath, "w");
 	FILE *ImemFile = NULL;
@@ -332,8 +355,8 @@ void printStatsFile(Core *core) {
 	fprintf(statsFile, "write_hit %d\n", core->cache.writeHitCount);
 	fprintf(statsFile, "read_miss %d\n", core->cache.readMissCount);
 	fprintf(statsFile, "write_miss %d\n", core->cache.writeMissCount);
-	fprintf(statsFile, "decode_stall %d\n", core->decodeStallCount);
-	fprintf(statsFile, "mem_stall %d\n", core->memStallCount);
+	fprintf(statsFile, "decode_stall %d\n", core->pipeline.decodeStallCount);
+	fprintf(statsFile, "mem_stall %d\n", core->pipeline.memStallCount);
 	fclose(statsFile);
 }
 

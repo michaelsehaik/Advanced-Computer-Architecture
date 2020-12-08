@@ -53,10 +53,10 @@
     <ClInclude Include="IO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="clock.h">
+    <ClInclude Include="cache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cache.h">
+    <ClInclude Include="util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

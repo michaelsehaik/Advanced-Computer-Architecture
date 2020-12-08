@@ -5,7 +5,7 @@
 
 #include "cache.h"
 #include "pipeline.h"
-#include "clock.h"
+#include "util.h"
 #include "IO.h"
 
 #define REG_FILE_SIZE 16
@@ -49,11 +49,10 @@ typedef struct Core {
 	char *statsFilepath;
 	char* regoutFilepath;
 	int instructionCount;
-	int decodeStallCount;
-	int memStallCount;
 	Clock *clock;
 	bool halt;
 	bool pipelineIsEmpty;
+	RegisterDMA linkRegister;
 } Core;
 
 void core__init(Core *core,

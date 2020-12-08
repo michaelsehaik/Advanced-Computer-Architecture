@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "clock.h"
+#include "util.h"
 #include "IO.h"
 
 #define WORD_ADDRESS_MASK 0xFFFFF // 20 bits

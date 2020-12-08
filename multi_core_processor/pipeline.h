@@ -56,8 +56,10 @@ typedef struct Pipeline {
 	struct DecoderExecuteReg ID_EX;
 	struct ExecuteMemoryReg EX_MEM;
 	struct MemoryWriteBackReg MEM_WB;
-	bool stall[NUM_OF_STAGES];
-	bool halt[NUM_OF_STAGES];
+	bool memStall;
+	bool decodeStall;
+	int decodeStallCount;
+	int memStallCount;
 } Pipeline;
 
 /*
@@ -74,7 +76,6 @@ typedef struct Pipeline {
 */
 
 void pipeline__init(Pipeline *pipeline);
-void pipeline__setStall(Pipeline *pipeline, PiplineStage stage, bool value);
 
 /**
 * update pipeline registers, for each register, move D values to Q values

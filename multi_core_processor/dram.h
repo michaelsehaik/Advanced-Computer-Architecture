@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "msi_bus.h"
-#include "clock.h"
+#include "util.h"
 #include "IO.h"
 
 #define DRAM_LATENCY 64 

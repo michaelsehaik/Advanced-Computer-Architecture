@@ -31,9 +31,6 @@ void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	cache->curOperation.address = address;
 	cache->curOperation.data = data;
 
-	if (opName == STORE_CONDITIONAL && !isWriteReady(cache, set, tag)) {
-		cache->state = SC_FAILED_S;
-	}
 	if ((isLoadOperation(&cache->curOperation) && isBlockInCache(cache, set, tag)) ||
 		    (!isLoadOperation(&cache->curOperation) && isWriteReady(cache, set, tag))) {
 		cache->state = DATA_READY_S;
@@ -79,6 +76,11 @@ void cache__snoop(Cache *cache) {
 			}
 			cache->TSRAM[set].MSIState = INVALID_S;
 			break;
+		case FLUSH:
+			if (cache->bus->txn.address == cache->linkRegister->address && cache->linkRegister->flag) {
+				cache->linkRegister->flag = false;
+			}
+			break;
 	}
 }
 
@@ -120,13 +122,12 @@ void cache__update(Cache *cache) {
 			cache->state = DONE_S;
 			break;
 		case DONE_S:
-		case SC_FAILED_S:
 			cache->state = IDLE_S;
 			break;
 	}
 }
 
-void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath) {
+void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath, RegisterDMA *linkRegister) {
 	memset(cache->DSRAM, 0, CACHE_SIZE * sizeof(int));
 	memset(cache->TSRAM, 0, CACHE_SIZE * sizeof(TSRAM_CELL));
 	cache->origID = origID;
@@ -138,6 +139,7 @@ void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFil
 	cache->writeHitCount = 0;
 	cache->readMissCount = 0;
 	cache->writeMissCount = 0;
+	cache->linkRegister = linkRegister;
 }
 
 void printTSRAM(Cache *cache) {

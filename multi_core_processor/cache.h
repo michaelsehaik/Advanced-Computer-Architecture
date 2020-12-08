@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #include "msi_bus.h"
-#include "clock.h"
+#include "util.h"
 #include "IO.h"
 
 #define CACHE_SIZE 256
@@ -38,8 +38,7 @@ typedef enum CACHE_STATE {
 	SEND_READ_S,
 	WAIT_READ_S,
 	DATA_READY_S,
-	DONE_S,
-	SC_FAILED_S
+	DONE_S
 } CACHE_STATE;
 
 typedef struct TSRAM_CELL {
@@ -56,6 +55,7 @@ typedef struct Cache {
 	OriginatorID origID;
 	CacheOperation curOperation;
 	CACHE_STATE state;
+	RegisterDMA *linkRegister;
 	int readHitCount;
 	int writeHitCount;
 	int readMissCount;
@@ -76,6 +76,6 @@ typedef struct Cache {
 
 void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
 void cache__snoop(Cache *cache);
-void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath);
+void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath, RegisterDMA *linkRegister);
 void cache__update(Cache *cache);
 void cache__terminate(Cache *cache);
