@@ -70,7 +70,7 @@ void cache__snoop(Cache *cache) {
 			}
 			break;
 		case BUS_RDX:
-			if (cache->TSRAM[set].MSIState == MODIFIED_S) {
+			if (cache->TSRAM[set].MSIState == MODIFIED_S) { // FIXME: need bus D and Q.. add a stage Q=D after snoop or not all cores will invalidate
 				bus__createTransaction(&txn, cache->origID, FLUSH, cache->bus->txn.address, cache->DSRAM[set]);
 				bus__setTransaction(cache->bus, txn);
 			}
