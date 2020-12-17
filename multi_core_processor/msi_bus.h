@@ -17,10 +17,10 @@ typedef enum BusCommand {
 } BusCommand;
 
 typedef struct BusTransaction {
-	OriginatorID origID;
-	BusCommand command;
-	int address;
-	int data;
+	DQ_FF origID;
+	DQ_FF command;
+	DQ_FF address;
+	DQ_FF data;
 } BusTransaction;
 
 typedef struct MSI_BUS {
@@ -37,9 +37,8 @@ typedef struct MSI_BUS {
 	the struct updates after we simulated sram+dram for a clock cycle. 
 */
 
-void bus__setTransaction(MSI_BUS *bus, BusTransaction txn);
-void bus__createTransaction(BusTransaction *txn, OriginatorID origID, BusCommand command, int address, int data);
-bool bus__requestTXN(MSI_BUS *bus, BusTransaction txn);
+void bus__updateTransaction(MSI_BUS *bus);
+bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data);
 void bus__update(MSI_BUS *bus);
 void bus__init(MSI_BUS *bus, char *traceFilepath, Clock *clock);
 void bus__terminate(MSI_BUS *bus);

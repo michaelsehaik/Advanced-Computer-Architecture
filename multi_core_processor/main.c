@@ -24,6 +24,19 @@ void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout
 	}
 }
 
+void busUpdate(MSI_BUS *bus, Core cores[], DRAM *DRAM) {
+	bus__update(bus);
+	for (int i = 0; i < 4; i++) {
+		cache__snoop(&cores[i].cache);
+		//printf("state after snoop: %d\n", cores[i].cache.state);
+	}
+	dram__update(DRAM);
+	for (int i = 0; i < 4; i++) {
+		cache__update(&cores[i].cache);
+	}
+	bus__updateTransaction(bus);
+}
+
 int main(int argc, char **argv) {
 	Core cores[4];
 	MSI_BUS bus;
@@ -43,15 +56,7 @@ int main(int argc, char **argv) {
 			printf("Clock Cycle: %d\n", clock.cycle);
 		}
 
-		bus__update(&bus);
-		for (int i = 0; i < 4; i++) {
-			cache__snoop(&cores[i].cache);
-			//printf("state after snoop: %d\n", cores[i].cache.state);
-		}
-		dram__update(&DRAM);
-		for (int i = 0; i < 4; i++) {
-			cache__update(&cores[i].cache);
-		}
+		busUpdate(&bus, cores, &DRAM);
 
 		for (int i = 0; i < 4; i++) {
 			printf("cache state: %d\n", cores[i].cache.state);
@@ -62,15 +67,13 @@ int main(int argc, char **argv) {
 		clock.cycle++;
 		
 		// FIXME DEBUG:
-		if (clock.cycle > 1000) {
+		if (clock.cycle > 2000) {
 			break;
 		}
 	}
 
 	bus__terminate(&bus);
 	dram__terminate(&DRAM);
-	for (int i = 0; i < 4; i++)
-		core__terminate(&cores[i]);
 
 	return 0;
 }

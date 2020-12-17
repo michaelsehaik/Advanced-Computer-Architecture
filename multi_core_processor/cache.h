@@ -10,7 +10,7 @@
 #define CACHE_SIZE 256
 
 #define INDEX_WIDTH 8
-#define TAG_WIDTH 12
+#define TAG_WIDTH 12 
 #define MSI_WIDTH 2
 
 enum MSI_STATE {
@@ -37,13 +37,12 @@ typedef enum CACHE_STATE {
 	FLUSH_S,
 	SEND_READ_S,
 	WAIT_READ_S,
-	DATA_READY_S,
-	DONE_S
+	DATA_READY_S
 } CACHE_STATE;
 
-typedef struct TSRAM_CELL {
-	short tag : TAG_WIDTH;
-	enum MSI_STATE MSIState : MSI_WIDTH;
+typedef struct TSRAM_CELL { // (unsigned is important for bit fields)
+	unsigned short tag : TAG_WIDTH;
+	unsigned short MSIState : MSI_WIDTH;
 } TSRAM_CELL;
 
 typedef struct Cache {
@@ -74,7 +73,7 @@ typedef struct Cache {
 		4. number of cache write misses
 */
 
-void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
+bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
 void cache__snoop(Cache *cache);
 void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath, RegisterDMA *linkRegister);
 void cache__update(Cache *cache);

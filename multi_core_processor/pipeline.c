@@ -4,19 +4,6 @@ void pipeline__init(Pipeline *pipeline) {
 	memset(pipeline, 0, sizeof(Pipeline));
 }
 
-void FF_DtoQ(DQ_FF* FF) {
-	FF->Q = FF->D;
-}
-
-/**
-* move all D values to Q values in register (array of numOfFF flip flops)
-*/
-void register_DtoQ(DQ_FF* FFs, int numOfFF) {
-	for (int i = 0; i < numOfFF; i++) {
-		FF_DtoQ(&FFs[i]);
-	}
-}
-
 void pipeline__update(Pipeline* pipeline) {
 	if(!(pipeline->decodeStall || pipeline->memStall))
 		register_DtoQ((DQ_FF*)(&pipeline->IF_ID), sizeof(struct FetchDecoderReg)/sizeof(DQ_FF));

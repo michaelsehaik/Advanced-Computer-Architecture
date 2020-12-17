@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+#include "util.h"
 
 typedef enum PiplineStage {
 	FETCH,
@@ -11,12 +12,6 @@ typedef enum PiplineStage {
 	WB,
 	NUM_OF_STAGES
 } PiplineStage;
-
-
-typedef struct DQ_FF {
-	int D;
-	int Q;
-}DQ_FF;
 
 struct FetchDecoderReg {
 	DQ_FF instruction;

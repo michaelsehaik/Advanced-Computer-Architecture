@@ -19,7 +19,17 @@ int getFullAddress(int set, int tag) {
 }
 
 bool isWriteReady(Cache *cache, int set, int tag) {
+	printf("isWriteReady set %d tag %d MSIState %d blokInCa %d mod %d\n", set, tag, cache->TSRAM[set].MSIState, isBlockInCache(cache, set, tag), MODIFIED_S);
 	return (isBlockInCache(cache, set, tag) && cache->TSRAM[set].MSIState == MODIFIED_S);
+}
+
+bool doOperation(Cache *cache, int set) {
+	if (isLoadOperation(&cache->curOperation)) {
+		cache->curOperation.data = cache->DSRAM[set];
+	}
+	else {
+		cache->DSRAM[set] = cache->curOperation.data;
+	}
 }
 
 void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName) { 
@@ -30,10 +40,20 @@ void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	cache->curOperation.name = opName;
 	cache->curOperation.address = address;
 	cache->curOperation.data = data;
+	bool loadOperation = isLoadOperation(&cache->curOperation);
 
-	if ((isLoadOperation(&cache->curOperation) && isBlockInCache(cache, set, tag)) ||
-		    (!isLoadOperation(&cache->curOperation) && isWriteReady(cache, set, tag))) {
-		cache->state = DATA_READY_S;
+	printf("isLoadOperation=%d\n", isLoadOperation(&cache->curOperation));
+	printf("isBlockInCache=%d\n", isBlockInCache(cache, set, tag));
+	printf("isWriteReady=%d\n", isWriteReady(cache, set, tag));
+
+	if ((loadOperation && isBlockInCache(cache, set, tag)) ||
+		    (!loadOperation && isWriteReady(cache, set, tag))) {
+
+		if (loadOperation) cache->readHitCount++;
+		else cache->writeHitCount++;
+
+		doOperation(cache, set);
+		return false;  // no need to wait for FSM
 	}
 	else if (isSetTaken(cache, set, tag)) {
 		cache->state = FLUSH_S;
@@ -41,6 +61,9 @@ void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	else {
 		cache->state = SEND_READ_S;
 	}
+	if (loadOperation) cache->readMissCount++;
+	else cache->writeMissCount++;
+	return true; // need to wait for FSM
 }
 
 void loadToCache(Cache *cache, int set, int tag) {
@@ -49,35 +72,33 @@ void loadToCache(Cache *cache, int set, int tag) {
 	}
 	else {
 		cache->TSRAM[set].MSIState = MODIFIED_S;
+		printf("MODIFIED_S: set %d, tag %d, value: %d\n", set, tag, cache->TSRAM[set].MSIState);
 	}
 	cache->TSRAM[set].tag = tag;
-	cache->DSRAM[set] = cache->bus->txn.data;
+	cache->DSRAM[set] = cache->bus->txn.data.Q;
 }
 
 void cache__snoop(Cache *cache) {
-	BusTransaction txn;
-	int set = cache->bus->txn.address % CACHE_SIZE;
-	int tag = cache->bus->txn.address / CACHE_SIZE;
+	int set = cache->bus->txn.address.Q % CACHE_SIZE;
+	int tag = cache->bus->txn.address.Q / CACHE_SIZE;
 	bool blockInCache = isBlockInCache(cache, set, tag);
 
-	if (cache->bus->txn.origID == cache->origID || !isBlockInCache) return;
-	switch (cache->bus->txn.command) {
+	if (cache->bus->txn.origID.Q == cache->origID || !isBlockInCache) return;
+	switch (cache->bus->txn.command.Q) {
 		case BUS_RD:
 			if (cache->TSRAM[set].MSIState == MODIFIED_S) {
-				bus__createTransaction(&txn, cache->origID, FLUSH, cache->bus->txn.address, cache->DSRAM[set]);
-				bus__setTransaction(cache->bus, txn);
+				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set]); //always granted
 				cache->TSRAM[set].MSIState = SHARED_S;
 			}
 			break;
 		case BUS_RDX:
-			if (cache->TSRAM[set].MSIState == MODIFIED_S) { // FIXME: need bus D and Q.. add a stage Q=D after snoop or not all cores will invalidate
-				bus__createTransaction(&txn, cache->origID, FLUSH, cache->bus->txn.address, cache->DSRAM[set]);
-				bus__setTransaction(cache->bus, txn);
+			if (cache->TSRAM[set].MSIState == MODIFIED_S) { 
+				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set]); //always granted
 			}
 			cache->TSRAM[set].MSIState = INVALID_S;
 			break;
 		case FLUSH:
-			if (cache->bus->txn.address == cache->linkRegister->address && cache->linkRegister->flag) {
+			if (cache->bus->txn.address.Q == cache->linkRegister->address && cache->linkRegister->flag) {
 				cache->linkRegister->flag = false;
 			}
 			break;
@@ -94,34 +115,24 @@ void cache__update(Cache *cache) {
 	switch (cache->state) {
 		case FLUSH_S:
 			flushAddr = getFullAddress(cache->TSRAM[set].tag, set);
-			bus__createTransaction(&txn, cache->origID, FLUSH_S, flushAddr, cache->DSRAM[set]);
-			if (bus__requestTXN(cache->bus, txn)) {
+			if (bus__requestTXN(cache->bus, cache->origID, FLUSH_S, flushAddr, cache->DSRAM[set])) {
 				cache->state = SEND_READ_S;
 			}
 			break;
 		case SEND_READ_S:
 			command = (cache->curOperation.name == LOAD_WORD) ? BUS_RD : BUS_RDX;
-			bus__createTransaction(&txn, cache->origID, command, cache->curOperation.address, cache->DSRAM[set]);
-			if (bus__requestTXN(cache->bus, txn)) {
+			if (bus__requestTXN(cache->bus, cache->origID, command, cache->curOperation.address, 0)) {
 				cache->state = WAIT_READ_S;
 			}
 			break;
 		case WAIT_READ_S:
-			if (cache->bus->txn.command == FLUSH && cache->bus->txn.address == cache->curOperation.address) {
+			if (cache->bus->txn.command.Q == FLUSH && cache->bus->txn.address.Q == cache->curOperation.address) {
 				loadToCache(cache, set, tag);
+				doOperation(cache, set);
 				cache->state = DATA_READY_S;
 			}
 			break;
 		case DATA_READY_S:
-			if (isLoadOperation(&cache->curOperation)) {
-				cache->curOperation.data = cache->DSRAM[set];
-			}
-			else {
-				cache->DSRAM[set] = cache->curOperation.data;
-			}
-			cache->state = DONE_S;
-			break;
-		case DONE_S:
 			cache->state = IDLE_S;
 			break;
 	}
@@ -146,7 +157,7 @@ void printTSRAM(Cache *cache) {
 	FILE *outputFile = NULL;
 	fopen_s(&outputFile, cache->tsramFilepath, "w");
 	for (int i = 0; i < CACHE_SIZE; i++) {
-		fprintf(outputFile, "%05X%03X\n", cache->TSRAM->MSIState, cache->TSRAM->tag);
+		fprintf(outputFile, "%05X%03X\n", cache->TSRAM[i].MSIState, cache->TSRAM[i].tag);
 	}
 	fclose(outputFile);
 }

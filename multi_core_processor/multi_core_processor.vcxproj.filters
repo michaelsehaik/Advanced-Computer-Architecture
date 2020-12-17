@@ -36,6 +36,9 @@
     <ClCompile Include="cache.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.h">
