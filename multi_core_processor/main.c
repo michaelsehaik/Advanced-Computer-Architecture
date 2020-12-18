@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#include "clock.h"
+#include "util.h"
 #include "msi_bus.h"
 #include "pipeline.h"
 #include "cache.h"
@@ -9,12 +9,11 @@
 #include "IO.h"
 
 void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout_file, char *regout_file, Clock *clock) {
-
 	checkFiles(filepaths);
 	bus__init(bus, filepaths[BUSTRACE_FILE], clock);
 	dram__init(DRAM, bus, filepaths[MEMIN_FILE], filepaths[MEMOUT_FILE], clock);
 	for (int i = 0; i < 4; i++) {
-		core__init(&cores[i], bus,
+		core__init(&cores[i], bus, i,
 								filepaths[IMEM_FILE_BASE + i],
 								filepaths[CORE_TRACE_FILE_BASE + i],
 								filepaths[DSRAM_FILE_BASE + i],
@@ -25,34 +24,56 @@ void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout
 	}
 }
 
+void busUpdate(MSI_BUS *bus, Core cores[], DRAM *DRAM) {
+	bus__update(bus);
+	for (int i = 0; i < 4; i++) {
+		cache__snoop(&cores[i].cache);
+		//printf("state after snoop: %d\n", cores[i].cache.state);
+	}
+	dram__update(DRAM);
+	for (int i = 0; i < 4; i++) {
+		cache__update(&cores[i].cache);
+	}
+	bus__updateTransaction(bus);
+}
+
 int main(int argc, char **argv) {
 	Core cores[4];
 	MSI_BUS bus;
 	DRAM DRAM;
 	char *memout_file = NULL, *regout_file = NULL;
 	Clock clock = (Clock){.cycle = 0};
-	bool halt = false;
+	bool done = false;
 
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file, &clock);
-	
-	while (!halt) {
-		halt = true; // if any of the cores is still running halt = false
+	printf("Proccessor Initialization Completed\n");
 
-		bus__update(&bus);
-		dram__update(&DRAM);
-		for (int i = 0; i < 4; i++) {
-			core__update(&cores[i]);
+	while (!done) {
+		done = true;
+
+		if (clock.cycle % 1 == 0) {
+			printf("Clock Cycle: %d\n", clock.cycle);
 		}
-		
+
+		busUpdate(&bus, cores, &DRAM);
+
+		for (int i = 0; i < 4; i++) {
+			printf("cache state: %d\n", cores[i].cache.state);
+			core__update(&cores[i]);
+			done &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
+		}
+
 		clock.cycle++;
+		
+		// FIXME DEBUG:
+		if (clock.cycle > 2000) {
+			break;
+		}
 	}
 
-	// TODO terminate - free memory, close files and write tracefile
 	bus__terminate(&bus);
 	dram__terminate(&DRAM);
-	for (int i = 0; i < 4; i++)
-		core__terminate(&cores[i]);
 
 	return 0;
 }

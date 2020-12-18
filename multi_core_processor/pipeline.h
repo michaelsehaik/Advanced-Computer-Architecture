@@ -2,43 +2,21 @@
 
 #include <stdbool.h>
 
+#include "util.h"
 
-enum PiplineStages {
+typedef enum PiplineStage {
 	FETCH,
 	DECODE,
 	EXEC,
 	MEM,
 	WB,
 	NUM_OF_STAGES
-};
-
-enum PipelineRegisters { // indexes to buffer array
-	FE_DE,
-	DE_EXE,
-	EXE_MEM,
-	MEM_WB,
-	NUM_OF_PIPELINE_REGS
-};
-
-struct Buffer {
-	int rt;
-	int rs;
-	int rd;
-	int PC;
-	int simm;
-	int aluRes;
-	int memOut;
-	bool valid;
-};
-
-typedef struct DQ_FF {
-	int D;
-	int Q;
-}DQ_FF;
+} PiplineStage;
 
 struct FetchDecoderReg {
 	DQ_FF instruction;
 	DQ_FF PC;
+	DQ_FF valid;
 };
 
 struct DecoderExecuteReg {
@@ -47,6 +25,7 @@ struct DecoderExecuteReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF valid;
 };
 
 struct ExecuteMemoryReg {
@@ -54,14 +33,17 @@ struct ExecuteMemoryReg {
 	DQ_FF rd;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF valid;
 };
 
 struct MemoryWriteBackReg{
 	DQ_FF aluRes;
 	DQ_FF memValue;
 	DQ_FF rd;
+	DQ_FF memOpSuccess;
 	DQ_FF opcode;
 	DQ_FF PC;
+	DQ_FF valid;
 };
 
 typedef struct Pipeline {
@@ -69,7 +51,10 @@ typedef struct Pipeline {
 	struct DecoderExecuteReg ID_EX;
 	struct ExecuteMemoryReg EX_MEM;
 	struct MemoryWriteBackReg MEM_WB;
-	bool stall[NUM_OF_STAGES];
+	bool memStall;
+	bool decodeStall;
+	int decodeStallCount;
+	int memStallCount;
 } Pipeline;
 
 /*

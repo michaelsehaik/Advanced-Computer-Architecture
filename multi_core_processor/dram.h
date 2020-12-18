@@ -1,16 +1,22 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "msi_bus.h"
-#include "clock.h"
+#include "util.h"
 #include "IO.h"
 
+#define DRAM_LATENCY 64 
 #define DRAM_SIZE 1048576 // 2^20 
+static int staticMem[DRAM_SIZE];
 
 typedef struct DRAM{
 	int *mem; 
 	MSI_BUS *bus;
 	char *memoutFilepath;
-	int lastAddr;				// TODO needs to hold the last non-zero address
+	int lastAddr;		
+	int numOfWaitCycles;
 	Clock *clock;
 } DRAM;
 
