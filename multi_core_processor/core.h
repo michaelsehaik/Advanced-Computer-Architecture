@@ -40,7 +40,7 @@ typedef enum { // indexes to buffer array
 typedef struct Core {
 	Cache cache;
 	Pipeline pipeline;
-	int registers[REG_FILE_SIZE];
+	DQ_FF registers[REG_FILE_SIZE];
 	int Imem[IMEM_SIZE];
 	DQ_FF PC;
 	bool waitForCache;

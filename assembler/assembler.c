@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 typedef enum Opcode {
-	ADD, SUB,	AND, OR, XOR, MUL, SLL,	SRA, SRL, BEQ, BNE,	BLT, BGT, BLE, BGE,	JAL, LW, SW, LL, SC, HALT
+	ADD, SUB, AND, OR, XOR, MUL, SLL, SRA, SRL, BEQ, BNE, BLT, BGT, BLE, BGE, JAL, LW, SW, LL, SC, HALT
 } Opcode;
 
 typedef enum Register {
@@ -39,6 +39,67 @@ void testProgram1() {
 	addInstruction(LL, R2, R1, R2, 0x12);
 	addInstruction(SC, R2, R1, R2, 0x13);
 	addInstruction(HALT, R0, R0, R0, 0x0);
+
+	fclose(outputFile);
+}
+
+void testLoad() {
+	char* filename = "test_load.txt";
+	fopen_s(&outputFile, filename, "w");
+
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(HALT, R0, R0, R0, 0x0);	// halt
+
+	fclose(outputFile);
+}
+
+void testLoadFromCore() {
+	char* filename = "test_load_from_core.txt";
+	fopen_s(&outputFile, filename, "w");
+
+	addInstruction(LL, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(HALT, R0, R0, R0, 0x0);	// halt
+
+	fclose(outputFile);
+}
+
+void testLoadStore() {
+	char* filename = "test_load_store.txt";
+	fopen_s(&outputFile, filename, "w");
+
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0 (bus)
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(ADD, R2, R2, R2, 0x0);	// R2 = R2 + R2
+	addInstruction(SW, R2, R1, R0, 0x0);	// store MEM[0]=R2 (bus)
+	addInstruction(LW, R2, R1, R0, 0x0);	// load from 0
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(ADD, R2, R1, R0, 0x0);
+	addInstruction(HALT, R0, R0, R0, 0x0);	// halt
 
 	fclose(outputFile);
 }
@@ -184,5 +245,9 @@ loop1:
 int main(int argc, char **argv) {
 	testProgram1();
 	Program1MM1Core();
+	testLoad();
+	testLoadFromCore();
+	testLoadStore();
+
 	return 0;
 }

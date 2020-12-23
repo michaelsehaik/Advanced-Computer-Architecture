@@ -19,7 +19,6 @@ int getFullAddress(int set, int tag) {
 }
 
 bool isWriteReady(Cache *cache, int set, int tag) {
-	printf("isWriteReady set %d tag %d MSIState %d blokInCa %d mod %d\n", set, tag, cache->TSRAM[set].MSIState, isBlockInCache(cache, set, tag), MODIFIED_S);
 	return (isBlockInCache(cache, set, tag) && cache->TSRAM[set].MSIState == MODIFIED_S);
 }
 
@@ -36,7 +35,7 @@ void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	int set = address % CACHE_SIZE;
 	int tag = address / CACHE_SIZE;
 
-	printf("setting operation name: %d\n", opName);
+	printf("chache %d: setting operation name: %d\n", cache->origID, opName);
 	cache->curOperation.name = opName;
 	cache->curOperation.address = address;
 	cache->curOperation.data = data;
@@ -69,10 +68,11 @@ void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 void loadToCache(Cache *cache, int set, int tag) {
 	if (cache->curOperation.name == LOAD_WORD) {		
 		cache->TSRAM[set].MSIState = SHARED_S;
+		printf("cache %d: SHARED_S set %d, tag %d, value: %d\n", cache->origID, set, tag, cache->TSRAM[set].MSIState);
 	}
 	else {
 		cache->TSRAM[set].MSIState = MODIFIED_S;
-		printf("MODIFIED_S: set %d, tag %d, value: %d\n", set, tag, cache->TSRAM[set].MSIState);
+		printf("cache %d: MODIFIED_S set %d, tag %d, value: %d\n", cache->origID, set, tag, cache->TSRAM[set].MSIState);
 	}
 	cache->TSRAM[set].tag = tag;
 	cache->DSRAM[set] = cache->bus->txn.data.Q;
@@ -163,6 +163,6 @@ void printTSRAM(Cache *cache) {
 }
 
 void cache__terminate(Cache *cache) {
-	createFileFromArray(cache->dsramFilepath, cache->DSRAM, CACHE_SIZE, true);
+	createFileFromArray(cache->dsramFilepath, cache->DSRAM, CACHE_SIZE, true, false);
 	printTSRAM(cache);
 }

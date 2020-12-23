@@ -58,7 +58,7 @@ int calcNeedToJump(Core* core, int R_rs, int R_rt, OpCode opcode) {
 	case BGE:
 		return R_rs >= R_rt;
 	case JAL:
-		core->registers[15] = core->PC.Q;
+		core->registers[15].D = core->PC.Q;
 		return 1;
 	default:
 		return 0;
@@ -116,8 +116,7 @@ bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) {
 		if (checkStoreOpcode(opcode) && rd == rd_ID_EX) stall = true; // store register that should be written before
 	}
 		
-
-	printf("rd=%d, rs=%d, rt=%d, rd_MEM_WB=%d, rd_EX_MEM=%d, rd_ID_EX=%d, valid=%d, stall=%d\n", rd, rs, rt, rd_MEM_WB, rd_EX_MEM, rd_ID_EX, core->pipeline.ID_EX.valid.Q, stall);
+	printf("core %d: decode stall=%d\n", core->cache.origID, stall);
 
 	core->pipeline.decodeStall = stall;
 	return stall;
@@ -171,15 +170,15 @@ void doDecodeStage(Core *core) {
 		return; 
 	}
 
-	core->registers[IMM_REG] = signExtension(imm);
-	core->pipeline.ID_EX.A_val.D = core->registers[rs];
-	core->pipeline.ID_EX.B_val.D = core->registers[rt];
-	printf("Instruction=%x, rs=%d, rt=%d, rsVal=%d\n", Instruction, rs, rt, core->registers[rs]);
+	core->registers[IMM_REG].D = signExtension(imm);
+	core->registers[IMM_REG].Q = core->registers[IMM_REG].D; // special case (it's not a register it is a wire..)
+	core->pipeline.ID_EX.A_val.D = core->registers[rs].Q;
+	core->pipeline.ID_EX.B_val.D = core->registers[rt].Q;
 	core->pipeline.ID_EX.rd.D = rd;
-	int needToJump = calcNeedToJump(core, core->registers[rs], core->registers[rt], opcode); //Set according to branch commands comparison
+	int needToJump = calcNeedToJump(core, core->registers[rs].Q, core->registers[rt].Q, opcode); //Set according to branch commands comparison
 	if (needToJump) {
-		int jumpDestination = core->registers[rd] & 0x03FF;
-		printf("dest: %d\n", jumpDestination);
+		int jumpDestination = core->registers[rd].Q & 0x03FF;
+		printf("core %d: jumpDestination: %d\n", core->cache.origID, jumpDestination);
 		core->PC.D = jumpDestination;
 	}
 }
@@ -205,11 +204,11 @@ void doExecuteStage(Core *core) {
 void memoryManage(Core* core) {
 	OpCode opcode = core->pipeline.EX_MEM.opcode.Q;
 	int address = core->pipeline.EX_MEM.aluRes.Q;
-	int data = core->registers[core->pipeline.EX_MEM.rd.Q];
+	int data = core->registers[core->pipeline.EX_MEM.rd.Q].Q;
 
 	if (core->cache.state == IDLE_S) {
 		if (opcode == SC && !(address == core->linkRegister.address && core->linkRegister.flag)) {
-			core->registers[core->pipeline.EX_MEM.rd.Q] = 0; // failure
+			core->registers[core->pipeline.EX_MEM.rd.Q].D = 0; // failure
 			return;
 		}
 		if (cache__setNewOperation(&core->cache, address, data, getCacheOpName(opcode))) {
@@ -221,7 +220,7 @@ void memoryManage(Core* core) {
 		}
 	}
 	else if (core->cache.state == DATA_READY_S) {
-		printf("set data: %d\n", core->cache.curOperation.data);
+		printf("core %d: data is ready %d\n", core->cache.origID, core->cache.curOperation.data);
 		core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data;
 		core->pipeline.memStall = false;
 		core->pipeline.MEM_WB.valid.D = true;
@@ -253,7 +252,6 @@ void doMemStage(Core *core) {
 
 void doWriteBackStage(Core *core) {
 	if (!core->pipeline.MEM_WB.valid.Q) {
-		printf("not valid\n");
 		return;
 	}
 
@@ -265,9 +263,8 @@ void doWriteBackStage(Core *core) {
 	switch (opcode)
 	{
 	case LW:
-	case LL: // check load linked
-		printf("writing to %d value %d\n", rd, core->pipeline.MEM_WB.memValue.Q);
-		core->registers[rd] = core->pipeline.MEM_WB.memValue.Q;
+	case LL: 
+		core->registers[rd].D = core->pipeline.MEM_WB.memValue.Q;
 		break;
 	case ADD:
 	case SUB:
@@ -278,7 +275,7 @@ void doWriteBackStage(Core *core) {
 	case SLL:
 	case SRA:
 	case SRL:
-		core->registers[rd] = core->pipeline.MEM_WB.aluRes.Q;
+		core->registers[rd].D = core->pipeline.MEM_WB.aluRes.Q;
 		break;
 	default:
 		break;
@@ -308,14 +305,15 @@ void updateCoreTrace(Core *core) {
 	printPC(core, core->pipeline.ID_EX.valid.Q, core->pipeline.ID_EX.PC.Q);
 	printPC(core, core->pipeline.EX_MEM.valid.Q, core->pipeline.EX_MEM.PC.Q);
 	printPC(core, core->pipeline.MEM_WB.valid.Q, core->pipeline.MEM_WB.PC.Q);
-	printArray(core->traceFile, &core->registers[2], REG_FILE_SIZE-2, false); //TODO change registers[2] to R2 enum
+	printArray(core->traceFile, &core->registers[2], REG_FILE_SIZE-2, false, true); 
 	fprintf(core->traceFile, "\n");
 }
 
 void core__update(Core *core) {
 	if (!core->pipelineIsEmpty) {
+		updateCoreTrace(core);	
 		executeStep(core);
-		updateCoreTrace(core);	// FIXME: problem with prints. executeStep fixes stalls, but it also sets registers. we need registers to be DQFF?
+		register_DtoQ((DQ_FF*)(&core->registers), REG_FILE_SIZE);
 		pipeline__update(&core->pipeline);
 		core->PC.Q = core->PC.D;
 		if (core->halt && !core->pipeline.MEM_WB.valid.Q && core->cache.state == IDLE_S) {
@@ -339,7 +337,7 @@ void core__init(Core *core,
 	pipeline__init(&core->pipeline);
 	core->linkRegister.flag = false;
 	cache__init(&core->cache, bus, origID, dsramFilepath, tsramFilepath, &core->linkRegister);
-	memset(core->registers, 0, REG_FILE_SIZE * sizeof(int));
+	memset(core->registers, 0, REG_FILE_SIZE * sizeof(DQ_FF));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC.Q = 0;
 	core->PC.D = 0;
@@ -376,6 +374,6 @@ void printStatsFile(Core *core) { // FIXME: not counting clock cycles, and some 
 void core__terminate(Core *core) {
 	cache__terminate(&core->cache);
 	fclose(core->traceFile);
-	createFileFromArray(core->regoutFilepath, &core->registers[2], REG_FILE_SIZE-2, true); //TODO change registers[2] to R2 enum
+	createFileFromArray(core->regoutFilepath, &core->registers[2], REG_FILE_SIZE-2, true, true); 
 	printStatsFile(core);
 }

@@ -11,7 +11,7 @@ void dram__update(DRAM *DRAM) {
 		}
 		else if (DRAM->numOfWaitCycles == 0) {
 			int data = DRAM->mem[DRAM->bus->txn.address.Q];
-			printf("DRAM: sending request\n");
+			printf("DRAM: sending data\n");
 			bus__requestTXN(DRAM->bus, MAIN_MEMORY, FLUSH, DRAM->bus->txn.address.Q, data); //always granted
 		}
 	}
@@ -33,5 +33,5 @@ void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilep
 }
 
 void dram__terminate(DRAM *DRAM) {
-	createFileFromArray(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr, true);
+	createFileFromArray(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr, true, false);
 }

@@ -27,6 +27,6 @@ static char* default_args[] = { "sim.exe",
 								0 };
 
 void checkFiles(char **filepaths);
-int loadArrayFromFile(FILE* file, int valuesArray[], int size);
-void printArray(FILE *outputFile, int valueArray[], int size, bool newline);
-void createFileFromArray(char* filepath, int valueArray[], int size, bool newline);
+int loadArrayFromFile(FILE* file, int *valuesArray, int size);
+void printArray(FILE *outputFile, int *valueArray, int size, bool newline, bool isFF);
+void createFileFromArray(char* filepath, int valueArray[], int size, bool newline, bool isFF);

@@ -12,8 +12,8 @@ typedef struct RegisterDMA {
 } RegisterDMA;
 
 typedef struct DQ_FF {
-	int D;
-	int Q;
+	int Q;	// note: Q is the first 4 bytes.
+	int D;  // note: D is the next 4 bytes.
 } DQ_FF;
 
 

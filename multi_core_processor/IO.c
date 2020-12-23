@@ -31,44 +31,18 @@ int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	return numOfLines - 1;
 }
 
-void printArray(FILE *outputFile, int valueArray[], int size, bool newline) {
+void printArray(FILE *outputFile, int* valueArray, int size, bool newline, bool isFF) {
 	for (int i = 0; i < size; i++) {
-		fprintf(outputFile, "%08X", valueArray[i]);
+		int idx = isFF ? i * 2 : i;
+		fprintf(outputFile, "%08X", valueArray[idx]);
 		if (newline) fprintf(outputFile, "\n");
 		else fprintf(outputFile, " ");
 	}
 }
 
-void createFileFromArray(char* filepath, int valueArray[], int size, bool newline) {
+void createFileFromArray(char* filepath, int* valueArray, int size, bool newline, bool isFF) {
 	FILE *outputFile = NULL;
 	fopen_s(&outputFile, filepath, "w");
-	printArray(outputFile, valueArray, size, newline);
+	printArray(outputFile, valueArray, size, newline, isFF);
 	fclose(outputFile);
 }
-
-/*
-int getNumOfLines(FILE* file) {
-	int count = 0;
-	for (char ch = getc(file); ch != EOF; ch = getc(file))
-		if (ch == '\n') count++;
-
-	fseek(file, 0, SEEK_SET); // move pointer back to begginnig of file
-	return count;
-}
-
-int* allocateArrayFromFile(char *filepath) {
-	FILE* file;
-	int numOfLines;
-	int* valuesArray;
-
-	file = fopen(filepath, "r");
-	numOfLines = getNumOfLines(file);
-
-	valuesArray = (int *)calloc(numOfLines, sizeof(int));
-	loadArrayFromFile(file, valuesArray, numOfLines);
-
-	fclose(file);
-
-	return valuesArray;
-}
-*/
