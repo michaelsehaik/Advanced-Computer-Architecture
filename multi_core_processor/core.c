@@ -260,25 +260,11 @@ void doWriteBackStage(Core *core) {
 	if (rd == 0 || rd == 1) { // Can't write to reg0 and reg1
 		return;
 	}
-	switch (opcode)
-	{
-	case LW:
-	case LL: 
+	if (opcode == LW || opcode == LL) {
 		core->registers[rd].D = core->pipeline.MEM_WB.memValue.Q;
-		break;
-	case ADD:
-	case SUB:
-	case AND:
-	case OR:
-	case XOR:
-	case MUL:
-	case SLL:
-	case SRA:
-	case SRL:
+	}
+	else if (opcode >= ADD && opcode <= SRL) {
 		core->registers[rd].D = core->pipeline.MEM_WB.aluRes.Q;
-		break;
-	default:
-		break;
 	}
 }
 
