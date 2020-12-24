@@ -14,9 +14,9 @@ void pipeline__update(Pipeline* pipeline) {
 	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
 	
 	if (pipeline->decodeStall) {
-		pipeline->decodeStallCount++;
+		//pipeline->decodeStallCount++;
 	}
 	if (pipeline->memStall) {
-		pipeline->memStallCount++;
+		//pipeline->memStallCount++;
 	}
 }
