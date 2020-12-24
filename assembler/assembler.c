@@ -152,11 +152,11 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(SW, R10, R11, R14, 0x10);
 
 	
-	addInstruction(BLT, R1, R13, R8, 5 + lineOffset);
+	addInstruction(BLT, R1, R13, R8, 4 + lineOffset);
 	addInstruction(ADD, R13, R13, R1, 0x1);
 
 	
-	addInstruction(BLT, R1, R14, R9, 4 + lineOffset);
+	addInstruction(BLT, R1, R14, R9, 3 + lineOffset);
 	addInstruction(ADD, R14, R14, R1, 0x10);
 }
 

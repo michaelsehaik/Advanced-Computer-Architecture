@@ -216,6 +216,7 @@ void memoryManage(Core* core) {
 			core->pipeline.MEM_WB.valid.D = false;
 		}
 		else {
+			core->pipeline.MEM_WB.valid.D = true;
 			core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data; // data operation completed
 		}
 	}
