@@ -104,7 +104,7 @@ void testLoadStore() {
 	fclose(outputFile);
 }
 
-void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int lineOffset) {
+void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int lineOffset, int addToPrevCalc) {
 
 	addInstruction(ADD, R8, R1, R0, 0x8 + offsetR13);
 	addInstruction(ADD, R9, R1, R0, 0x80 + offsetR14);
@@ -148,7 +148,12 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(ADD, R6, R6, R7, 0x0); //change location
 	addInstruction(ADD, R10, R6, R10, 0x0);//change location?
 
+
 	addInstruction(ADD, R11, R13, R1, 0x200 - MemOffset);//change location? init R11 = 0x200 + R13 (200 for 3'rd matrix location.
+	if (addToPrevCalc) {
+		addInstruction(LW, R4, R11, R14, 0x0);//change location?
+		addInstruction(ADD, R10, R10, R4, 0x0);//change location?
+	}
 	addInstruction(SW, R10, R11, R14, 0x10);
 
 	
@@ -160,22 +165,55 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(ADD, R14, R14, R1, 0x10);
 }
 
-void Program1MM1Core() { //Matrix Multiplication 1 Core
+void MM1Core() { //Matrix Multiplication 1 Core
 	char* filename = "MM1Core.txt";
 	fopen_s(&outputFile, filename, "w");
 
-	MM88(filename, 0         , 0         , 0   , 0 * 42);
-	MM88(filename, 0         , 0x8       , 0   , 1 * 42);
-	MM88(filename, 0x80      , 0         , 0   , 2 * 42);
-	MM88(filename, 0x80      , 0x8       , 0   , 3 * 42);
-	MM88(filename, 0x8       , 0x80      , 0x88, 4 * 42);
-	MM88(filename, 0x8       , 0x80 + 0x8, 0x88, 5 * 42);
-	MM88(filename, 0x8 + 0x80, 0x80      , 0x88, 6 * 42);
-	MM88(filename, 0x8 + 0x80, 0x80 + 0x8, 0x88, 7 * 42);
+	MM88(filename, 0         , 0         , 0   , 0 * 42, 0);
+	MM88(filename, 0         , 0x8       , 0   , 1 * 42, 0);
+	MM88(filename, 0x80      , 0         , 0   , 2 * 42, 0);
+	MM88(filename, 0x80      , 0x8       , 0   , 3 * 42, 0);
+	MM88(filename, 0x8       , 0x80      , 0x88, 4 * 42, 1);
+	MM88(filename, 0x8       , 0x80 + 0x8, 0x88, 5 * 42 + 2, 1);
+	MM88(filename, 0x8 + 0x80, 0x80      , 0x88, 6 * 42 + 4, 1);
+	MM88(filename, 0x8 + 0x80, 0x80 + 0x8, 0x88, 7 * 42 + 6, 1);
 
 	addInstruction(HALT, R0, R0, R0, 0x0);
 	fclose(outputFile);
 }
+
+void MM4Cores() { //Matrix Multiplication 1 Core
+
+	char* filename0 = "MM4Core0.txt";
+	fopen_s(&outputFile, filename0, "w");
+	MM88(filename0, 0, 0, 0, 0, 0);
+	MM88(filename0, 0x8, 0x80, 0x88, 42, 1);
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
+
+	char* filename1 = "MM4Core1.txt";
+	fopen_s(&outputFile, filename1, "w");
+	MM88(filename1, 0, 0x8, 0, 0, 0);
+	MM88(filename1, 0x8, 0x80 + 0x8, 0x88, 42, 1);
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
+
+	char* filename2 = "MM4Core2.txt";
+	fopen_s(&outputFile, filename2, "w");
+	MM88(filename2, 0x80, 0, 0, 0, 0);
+	MM88(filename2, 0x8 + 0x80, 0x80, 0x88, 42, 1);
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
+
+	char* filename3 = "MM4Core3.txt";
+	fopen_s(&outputFile, filename3, "w");
+	MM88(filename3, 0x80, 0x8, 0, 0, 0);
+	MM88(filename3, 0x8 + 0x80, 0x80 + 0x8, 0x88, 42, 1);
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
+
+}
+
 /*
 void Program1MM1Core() { //Matrix Multiplication 1 Core
 	char* filename = "MM1Core.txt";
@@ -244,7 +282,8 @@ loop1:
 
 int main(int argc, char **argv) {
 	testProgram1();
-	Program1MM1Core();
+	MM1Core();
+	MM4Cores();
 	testLoad();
 	testLoadFromCore();
 	testLoadStore();
