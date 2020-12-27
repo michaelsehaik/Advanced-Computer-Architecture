@@ -10,12 +10,12 @@ void updateBusTrace(MSI_BUS *bus) {
 
 void bus__updateTransaction(MSI_BUS *bus) {
 	register_DtoQ((DQ_FF*)(&bus->txn), sizeof(BusTransaction) / sizeof(DQ_FF));
-	printf("BUS: TXN, id.D: %d, command.D: %d\n", bus->txn.origID.D, bus->txn.command.D);
-	printf("BUS: TXN, id.Q: %d, command.Q: %d\n", bus->txn.origID.Q, bus->txn.command.Q);
+	//printf("BUS: TXN, id.D: %d, command.D: %d\n", bus->txn.origID.D, bus->txn.command.D);
+	//printf("BUS: TXN, id.Q: %d, command.Q: %d\n", bus->txn.origID.Q, bus->txn.command.Q);
 }
 
-bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data) {
-	if (bus->txn.command.D == NO_COMMAND || command == FLUSH) { // bus in not taken, or flush 
+bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data, bool override) {
+	if (bus->txn.command.D == NO_COMMAND || override) { // bus in not taken, or flush 
 		printf("BUS: recieved TXN, id: %d, command: %d\n", origID, command);
 		bus->txn.origID.D = origID;
 		bus->txn.command.D = command;

@@ -58,8 +58,10 @@ int main(int argc, char **argv) {
 			core__update(&cores[i]);
 			done &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
 		}
+		//printf("cache0 state=%d, addr: %x\n", cores[0].cache.state, cores[0].cache.curOperation.address);
 
 		clock.cycle++;
+		//if (clock.cycle > 5500) break;
 	}
 
 	bus__terminate(&bus);

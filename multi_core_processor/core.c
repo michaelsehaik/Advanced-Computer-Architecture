@@ -116,7 +116,7 @@ bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) {
 		if (checkStoreOpcode(opcode) && rd == rd_ID_EX) stall = true; // store register that should be written before
 	}
 		
-	printf("core %d: decode stall=%d\n", core->cache.origID, stall);
+	//printf("core %d: decode stall=%d\n", core->cache.origID, stall);
 
 	core->pipeline.decodeStall = stall;
 	return stall;
@@ -178,7 +178,7 @@ void doDecodeStage(Core *core) {
 	int needToJump = calcNeedToJump(core, core->registers[rs].Q, core->registers[rt].Q, opcode); //Set according to branch commands comparison
 	if (needToJump) {
 		int jumpDestination = core->registers[rd].Q & 0x03FF;
-		printf("core %d: jumpDestination: %d\n", core->cache.origID, jumpDestination);
+		//printf("core %d: jumpDestination: %d\n", core->cache.origID, jumpDestination);
 		core->PC.D = jumpDestination;
 	}
 }
@@ -197,6 +197,7 @@ void doExecuteStage(Core *core) {
 	core->pipeline.EX_MEM.PC.D = core->pipeline.ID_EX.PC.Q;
 	core->pipeline.EX_MEM.opcode.D = core->pipeline.ID_EX.opcode.Q;
 	int aluRes = calcAluRes(core->pipeline.ID_EX.A_val.Q, core->pipeline.ID_EX.B_val.Q, opcode); // Call to ALU function base or opcode
+	//printf("aluRes=%d\n", aluRes);
 	core->pipeline.EX_MEM.aluRes.D = aluRes;
 	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;	
 }
@@ -221,7 +222,7 @@ void memoryManage(Core* core) {
 		}
 	}
 	else if (core->cache.state == DATA_READY_S) {
-		printf("core %d: data is ready %d\n", core->cache.origID, core->cache.curOperation.data);
+		//printf("core %d: data is ready %d\n", core->cache.origID, core->cache.curOperation.data);
 		core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data;
 		core->pipeline.memStall = false;
 		core->pipeline.MEM_WB.valid.D = true;

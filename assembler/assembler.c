@@ -106,8 +106,8 @@ void testLoadStore() {
 
 void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int lineOffset, int addToPrevCalc) {
 
-	addInstruction(ADD, R8, R1, R0, 0x8 + offsetR13);
-	addInstruction(ADD, R9, R1, R0, 0x80 + offsetR14);
+	addInstruction(ADD, R8, R1, R0, 0x7 + offsetR13);
+	addInstruction(ADD, R9, R1, R0, 0x70 + offsetR14);
 
 	addInstruction(ADD, R14, R1, R0, 0x0 + offsetR14);
 	addInstruction(ADD, R13, R1, R0, 0x0 + offsetR13);
@@ -155,8 +155,8 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 		addInstruction(ADD, R10, R10, R4, 0x0);//change location?
 	}
 	addInstruction(SW, R10, R11, R14, 0x10);
-
 	
+
 	addInstruction(BLT, R1, R13, R8, 4 + lineOffset);
 	addInstruction(ADD, R13, R13, R1, 0x1);
 
@@ -212,6 +212,15 @@ void MM4Cores() { //Matrix Multiplication 1 Core
 	addInstruction(HALT, R0, R0, R0, 0x0);
 	fclose(outputFile);
 
+}
+
+void testMM8() { //Matrix Multiplication 1 Core
+
+	char* filename0 = "testMM8.txt";
+	fopen_s(&outputFile, filename0, "w");
+	MM88(filename0, 0, 0, 0, 0, 0);
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
 }
 
 /*
@@ -284,6 +293,7 @@ int main(int argc, char **argv) {
 	testProgram1();
 	MM1Core();
 	MM4Cores();
+	testMM8();
 	testLoad();
 	testLoadFromCore();
 	testLoadStore();

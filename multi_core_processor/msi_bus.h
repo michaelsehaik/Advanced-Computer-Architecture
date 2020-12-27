@@ -38,7 +38,7 @@ typedef struct MSI_BUS {
 */
 
 void bus__updateTransaction(MSI_BUS *bus);
-bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data);
+bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data, bool override);
 void bus__update(MSI_BUS *bus);
 void bus__init(MSI_BUS *bus, char *traceFilepath, Clock *clock);
 void bus__terminate(MSI_BUS *bus);
