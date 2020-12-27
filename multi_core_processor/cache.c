@@ -31,7 +31,7 @@ bool doOperation(Cache *cache, int set) {
 	}
 }
 
-void cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName) { 
+bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName) { 
 	int set = address % CACHE_SIZE;
 	int tag = address / CACHE_SIZE;
 	
