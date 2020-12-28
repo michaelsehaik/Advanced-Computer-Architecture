@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
 	while (!done) {
 		done = true;
-		printf("Clock Cycle: %d\n", clock.cycle);
+		//printf("Clock Cycle: %d\n", clock.cycle);
 
 		busUpdate(&bus, cores, &DRAM);
 
@@ -58,10 +58,11 @@ int main(int argc, char **argv) {
 			core__update(&cores[i]);
 			done &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
 		}
-		//printf("cache0 state=%d, addr: %x\n", cores[0].cache.state, cores[0].cache.curOperation.address);
+		//printf("cache0 state=%d, addr: %x, MSI2=%x, tag=%x\n", cores[0].cache.state, cores[0].cache.curOperation.address, \
+			cores[0].cache.TSRAM[2].MSIState, cores[0].cache.TSRAM[2].tag);
 
 		clock.cycle++;
-		//if (clock.cycle > 5500) break;
+		//if (clock.cycle > 5200) break;
 	}
 
 	bus__terminate(&bus);

@@ -16,7 +16,7 @@ void bus__updateTransaction(MSI_BUS *bus) {
 
 bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data, bool override) {
 	if (bus->txn.command.D == NO_COMMAND || override) { // bus in not taken, or flush 
-		printf("BUS: recieved TXN, id: %d, command: %d\n", origID, command);
+		//printf("BUS: recieved TXN, id: %d, command: %d\n", origID, command);
 		bus->txn.origID.D = origID;
 		bus->txn.command.D = command;
 		bus->txn.address.D = address;

@@ -39,7 +39,7 @@ bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	cache->curOperation.address = address;
 	cache->curOperation.data = data;
 	bool loadOperation = isLoadOperation(&cache->curOperation);
-	printf("cache %d: setting operation name: %d, addr =%d, data=%d\n", cache->origID, opName, address, data);
+	//printf("cache %d: setting operation name: %d, addr =%d, data=%d\n", cache->origID, opName, address, data);
 
 	//printf("isLoadOperation=%d\n", isLoadOperation(&cache->curOperation));
 	//printf("isBlockInCache=%d\n", isBlockInCache(cache, set, tag));
@@ -87,13 +87,13 @@ void cache__snoop(Cache *cache) {
 	if (cache->bus->txn.origID.Q == cache->origID || !isBlockInCache) return;
 	switch (cache->bus->txn.command.Q) {
 		case BUS_RD:
-			if (cache->TSRAM[set].MSIState == MODIFIED_S) {
+			if (isWriteReady(cache, set, tag)) {
 				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set], true); //always granted
 				cache->TSRAM[set].MSIState = SHARED_S;
 			}
 			break;
 		case BUS_RDX:
-			if (cache->TSRAM[set].MSIState == MODIFIED_S) { 
+			if (isWriteReady(cache, set, tag)) {
 				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set], true); //always granted
 			}
 			cache->TSRAM[set].MSIState = INVALID_S;
