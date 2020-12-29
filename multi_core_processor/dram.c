@@ -2,8 +2,9 @@
 
 void dram__update(DRAM *DRAM) {
 	if (DRAM->bus->txn.command.Q == FLUSH && DRAM->bus->txn.origID.Q != MAIN_MEMORY) {
-		DRAM->mem[DRAM->bus->txn.address.Q] = DRAM->bus->txn.data.Q;
-		(DRAM->lastAddr) = ((DRAM->lastAddr) <= (DRAM->bus->txn.address.Q)) ? (DRAM->bus->txn.address.Q + 1) : (DRAM->lastAddr);
+		int address = DRAM->bus->txn.address.Q;
+		DRAM->mem[address] = DRAM->bus->txn.data.Q;
+		if (DRAM->lastAddr < address) DRAM->lastAddr = address;
 	}
 	else if (DRAM->bus->txn.command.Q == BUS_RD || DRAM->bus->txn.command.Q == BUS_RDX) {
 		if (DRAM->numOfWaitCycles < 0) {
@@ -34,5 +35,5 @@ void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilep
 }
 
 void dram__terminate(DRAM *DRAM) {
-	createFileFromArray(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr, true, false);
+	createFileFromArray(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr + 1, true, false);
 }
