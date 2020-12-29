@@ -3,6 +3,7 @@
 void dram__update(DRAM *DRAM) {
 	if (DRAM->bus->txn.command.Q == FLUSH && DRAM->bus->txn.origID.Q != MAIN_MEMORY) {
 		DRAM->mem[DRAM->bus->txn.address.Q] = DRAM->bus->txn.data.Q;
+		(DRAM->lastAddr) = ((DRAM->lastAddr) <= (DRAM->bus->txn.address.Q)) ? (DRAM->bus->txn.address.Q + 1) : (DRAM->lastAddr);
 	}
 	else if (DRAM->bus->txn.command.Q == BUS_RD || DRAM->bus->txn.command.Q == BUS_RDX) {
 		if (DRAM->numOfWaitCycles < 0) {
