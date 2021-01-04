@@ -6,10 +6,10 @@ typedef struct Clock {
 	int cycle;
 } Clock;
 
-typedef struct RegisterDMA {
+typedef struct LinkRegister {
 	bool flag;
 	int address;
-} RegisterDMA;
+} LinkRegister;
 
 typedef struct DQ_FF {
 	int Q;	// note: Q is the first 4 bytes.

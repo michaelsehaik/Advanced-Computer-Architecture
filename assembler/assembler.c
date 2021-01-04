@@ -396,6 +396,27 @@ loop1:
 }
 */
 
+void LLAndSC() {
+	char* filename0 = "llsc.txt";
+	fopen_s(&outputFile, filename0, "w");
+
+	// INIT
+	addInstruction(ADD, R2, R0, R1, 0x7F); // 127
+	addInstruction(LL, R3, R0, R0, 0x0);	// load to R3
+	// Label = TRY (2)
+	addInstruction(ADD, R3, R3, R1, 0x1);	// R3++
+	addInstruction(SC, R3, R0, R0, 0x0);	// store R3
+	addInstruction(BEQ, R1, R3, R0, 0x2);	// if R3==0 goto TRY
+	addInstruction(LL, R3, R0, R0, 0x0);	// load to R3
+
+	addInstruction(BNE, R1, R2, R0, 0x1);	// if R2!=0 goto TRY
+	addInstruction(SUB, R2, R2, R1, 0x1);	// R2--
+
+	addInstruction(LW, R3, R0, R1, 0x100);  // force conflict flush
+	addInstruction(HALT, R0, R0, R0, 0x0);
+	fclose(outputFile);
+}
+
 int main(int argc, char **argv) {
 	testProgram1();
 	MM1Core();
@@ -404,6 +425,7 @@ int main(int argc, char **argv) {
 	testLoad();
 	testLoadFromCore();
 	testLoadStore();
+	LLAndSC();
 
 	return 0;
 }

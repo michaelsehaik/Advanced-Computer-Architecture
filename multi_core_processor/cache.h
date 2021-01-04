@@ -54,7 +54,7 @@ typedef struct Cache {
 	OriginatorID origID;
 	CacheOperation curOperation;
 	CACHE_STATE state;
-	RegisterDMA *linkRegister;
+	LinkRegister linkRegister;
 	int readHitCount;
 	int writeHitCount;
 	int readMissCount;
@@ -75,6 +75,6 @@ typedef struct Cache {
 
 bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
 void cache__snoop(Cache *cache);
-void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath, RegisterDMA *linkRegister);
+void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath);
 void cache__update(Cache *cache);
 void cache__terminate(Cache *cache);

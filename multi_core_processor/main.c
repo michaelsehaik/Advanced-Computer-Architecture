@@ -32,6 +32,8 @@ void busUpdate(MSI_BUS *bus, Core cores[], DRAM *DRAM) {
 	dram__update(DRAM);
 	for (int i = 0; i < 4; i++) {
 		cache__update(&cores[i].cache);
+		//printf("cache %d: state=%d, MSI[0]=%d\n", i, cores[i].cache.state, cores[i].cache.TSRAM[0].MSIState);
+		//printf("cache %d: address=%d, flag =%d\n", i, cores[i].cache.linkRegister->address, cores[i].cache.linkRegister->flag);
 	}
 	bus__updateTransaction(bus);
 }
@@ -50,7 +52,7 @@ int main(int argc, char **argv) {
 
 	while (!done) {
 		done = true;
-		//printf("Clock Cycle: %d\n", clock.cycle);
+		printf("Clock Cycle: %d\n", clock.cycle);
 
 		busUpdate(&bus, cores, &DRAM);
 
@@ -62,7 +64,7 @@ int main(int argc, char **argv) {
 			cores[0].cache.TSRAM[2].MSIState, cores[0].cache.TSRAM[2].tag);
 
 		clock.cycle++;
-		//if (clock.cycle > 5200) break;
+		//if (clock.cycle > 10000) break;
 	}
 
 	bus__terminate(&bus);

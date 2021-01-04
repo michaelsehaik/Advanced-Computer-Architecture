@@ -52,7 +52,6 @@ typedef struct Core {
 	Clock *clock;
 	bool halt;
 	bool pipelineIsEmpty;
-	RegisterDMA linkRegister;
 } Core;
 
 void core__init(Core *core,

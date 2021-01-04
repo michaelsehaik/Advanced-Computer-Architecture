@@ -82,7 +82,7 @@ CACHE_OPERATION_NAME getCacheOpName(OpCode opcode) {
 bool checkWriteRdForOpcode(OpCode opcode) {
 
 	if (opcode == ADD || opcode == SUB || opcode == AND || opcode == OR || opcode == XOR || opcode == MUL ||
-		opcode == SLL || opcode == SRA || opcode == SRL || opcode == LW || opcode == LL) {
+		opcode == SLL || opcode == SRA || opcode == SRL || opcode == LW || opcode == LL || opcode == SC) {
 		return true;
 	}
 	return false;
@@ -208,10 +208,6 @@ void memoryManage(Core* core) {
 	int data = core->registers[core->pipeline.EX_MEM.rd.Q].Q;
 
 	if (core->cache.state == IDLE_S) {
-		if (opcode == SC && !(address == core->linkRegister.address && core->linkRegister.flag)) {
-			core->registers[core->pipeline.EX_MEM.rd.Q].D = 0; // failure
-			return;
-		}
 		if (cache__setNewOperation(&core->cache, address, data, getCacheOpName(opcode))) {
 			core->pipeline.memStall = true;
 			core->pipeline.MEM_WB.valid.D = false;
@@ -262,7 +258,7 @@ void doWriteBackStage(Core *core) {
 	if (rd == 0 || rd == 1) { // Can't write to reg0 and reg1
 		return;
 	}
-	if (opcode == LW || opcode == LL) {
+	if (opcode == LW || opcode == LL || opcode == SC) {
 		core->registers[rd].D = core->pipeline.MEM_WB.memValue.Q;
 	}
 	else if (opcode >= ADD && opcode <= SRL) {
@@ -323,8 +319,7 @@ void core__init(Core *core,
 				Clock *clock) { 
 
 	pipeline__init(&core->pipeline);
-	core->linkRegister.flag = false;
-	cache__init(&core->cache, bus, origID, dsramFilepath, tsramFilepath, &core->linkRegister);
+	cache__init(&core->cache, bus, origID, dsramFilepath, tsramFilepath);
 	memset(core->registers, 0, REG_FILE_SIZE * sizeof(DQ_FF));
 	memset(core->Imem, 0, IMEM_SIZE * sizeof(int));
 	core->PC.Q = 0;
