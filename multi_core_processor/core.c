@@ -1,5 +1,8 @@
 #include "core.h"
 
+/**
+* perform immediate sign extension
+*/
 int signExtension(int imm) {
 	int signBit = imm & 0x800;
 	if (signBit == 0) {
@@ -8,6 +11,9 @@ int signExtension(int imm) {
 	return imm | 0xFFFFF000;
 }
 
+/**
+* calculate ALU result base on the opcode
+*/
 int calcAluRes(int A, int B, OpCode opcode) {
 	unsigned int x;
 	switch (opcode)
@@ -29,7 +35,6 @@ int calcAluRes(int A, int B, OpCode opcode) {
 	case SRA:
 		return A >> B;
 	case SRL:
-		// TODO : check this function, if doesn't work, Lami is guilty
 		x = (unsigned int)A;
 		return x >> B;
 	case LW:
@@ -42,6 +47,9 @@ int calcAluRes(int A, int B, OpCode opcode) {
 	}
 }
 
+/**
+* making branch resolution, base on the opcode
+*/
 int calcNeedToJump(Core* core, int R_rs, int R_rt, OpCode opcode) {
 	switch (opcode)
 	{
@@ -79,6 +87,9 @@ CACHE_OPERATION_NAME getCacheOpName(OpCode opcode) {
 	}
 }
 
+/**
+* return true for opcode that update the registers and false otherwise
+*/
 bool checkWriteRdForOpcode(OpCode opcode) {
 
 	if (opcode == ADD || opcode == SUB || opcode == AND || opcode == OR || opcode == XOR || opcode == MUL ||
@@ -88,6 +99,9 @@ bool checkWriteRdForOpcode(OpCode opcode) {
 	return false;
 }
 
+/**
+* check if the opcode including storing operation
+*/
 bool checkStoreOpcode(OpCode opcode) {
 
 	if (opcode == SW || opcode == SC) {
@@ -96,6 +110,9 @@ bool checkStoreOpcode(OpCode opcode) {
 	return false;
 }
 
+/**
+* check if the instruction need to be stalled in the decode stage, based on the opcode and the register's numbers
+*/
 bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) { 
 	bool stall = false;
 	
@@ -116,18 +133,19 @@ bool checkDecodeStall(Core* core, OpCode opcode, int rd, int rs, int rt) {
 		if (checkStoreOpcode(opcode) && rd == rd_ID_EX) stall = true; // store register that should be written before
 	}
 		
-	//printf("core %d: decode stall=%d\n", core->cache.origID, stall);
-
 	core->pipeline.decodeStall = stall;
 	return stall;
 }
 
+/**
+* simulate the fetch stage
+*/
 void doFetchStage(Core* core) {
 	if (core->halt) {
 		core->pipeline.IF_ID.valid.D = false;
 		return;
 	}
-	if (core->pipeline.decodeStall || core->pipeline.memStall) {
+	if (core->pipeline.decodeStall || core->pipeline.memStall) { // stage stalled
 		return;
 	}
 	
@@ -140,8 +158,11 @@ void doFetchStage(Core* core) {
 	}
 }
 
+/**
+* simulate the decode stage
+*/
 void doDecodeStage(Core *core) {
-	if (core->pipeline.memStall) {
+	if (core->pipeline.memStall) { // stage stall
 		return;
 	}
 	if (!core->pipeline.IF_ID.valid.Q) {
@@ -152,6 +173,7 @@ void doDecodeStage(Core *core) {
 
 	core->pipeline.ID_EX.PC.D = core->pipeline.IF_ID.PC.Q;
 	int Instruction = core->pipeline.IF_ID.instruction.Q;
+	// instruction parsing
 	OpCode opcode = (Instruction >> 24) & 0xFF;
 	int rd = (Instruction >> 20) & 0xF;
 	int rs = (Instruction >> 16) & 0xF;
@@ -159,12 +181,12 @@ void doDecodeStage(Core *core) {
 	int imm = (Instruction >> 0) & 0xFFF;
 	core->pipeline.ID_EX.opcode.D = opcode;
 
-	if (opcode == HALT) {
+	if (opcode == HALT) { // last instruction, turn on halt flag
 		core->halt = true;
 		return; 
 	}
 
-	if (checkDecodeStall(core, opcode, rd, rs, rt)) {
+	if (checkDecodeStall(core, opcode, rd, rs, rt)) { // check if we need to stall this instruction
 		core->pipeline.ID_EX.valid.D = false;
 		core->pipeline.decodeStallCount++;
 		return; 
@@ -176,15 +198,17 @@ void doDecodeStage(Core *core) {
 	core->pipeline.ID_EX.B_val.D = core->registers[rt].Q;
 	core->pipeline.ID_EX.rd.D = rd;
 	int needToJump = calcNeedToJump(core, core->registers[rs].Q, core->registers[rt].Q, opcode); //Set according to branch commands comparison
-	if (needToJump) {
+	if (needToJump) { // branch should be taken
 		int jumpDestination = core->registers[rd].Q & 0x03FF;
-		//printf("core %d: jumpDestination: %d\n", core->cache.origID, jumpDestination);
 		core->PC.D = jumpDestination;
 	}
 }
 
+/**
+* simulate execute stage
+*/
 void doExecuteStage(Core *core) {
-	if (core->pipeline.memStall) {
+	if (core->pipeline.memStall) { // stage stalled
 		return;
 	}
 	if (!core->pipeline.ID_EX.valid.Q) {
@@ -197,17 +221,19 @@ void doExecuteStage(Core *core) {
 	core->pipeline.EX_MEM.PC.D = core->pipeline.ID_EX.PC.Q;
 	core->pipeline.EX_MEM.opcode.D = core->pipeline.ID_EX.opcode.Q;
 	int aluRes = calcAluRes(core->pipeline.ID_EX.A_val.Q, core->pipeline.ID_EX.B_val.Q, opcode); // Call to ALU function base or opcode
-	//printf("aluRes=%d\n", aluRes);
 	core->pipeline.EX_MEM.aluRes.D = aluRes;
 	core->pipeline.EX_MEM.rd.D = core->pipeline.ID_EX.rd.Q;	
 }
 
+/**
+* manage memory operations
+*/
 void memoryManage(Core* core) {
 	OpCode opcode = core->pipeline.EX_MEM.opcode.Q;
 	int address = core->pipeline.EX_MEM.aluRes.Q;
 	int data = core->registers[core->pipeline.EX_MEM.rd.Q].Q;
 
-	if (core->cache.state == IDLE_S) {
+	if (core->cache.state == IDLE_S) { // check if the cache is idle
 		if (cache__setNewOperation(&core->cache, address, data, getCacheOpName(opcode))) {
 			core->pipeline.memStall = true;
 			core->pipeline.MEM_WB.valid.D = false;
@@ -217,14 +243,16 @@ void memoryManage(Core* core) {
 			core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data; // data operation completed
 		}
 	}
-	else if (core->cache.state == DATA_READY_S) {
-		//printf("core %d: data is ready %d\n", core->cache.origID, core->cache.curOperation.data);
+	else if (core->cache.state == DATA_READY_S) { // check if the data is ready
 		core->pipeline.MEM_WB.memValue.D = core->cache.curOperation.data;
 		core->pipeline.memStall = false;
 		core->pipeline.MEM_WB.valid.D = true;
 	}
 }
 
+/**
+* simulate memory stage
+*/
 void doMemStage(Core *core) {
 	if (!core->pipeline.EX_MEM.valid.Q && core->cache.state == IDLE_S) {
 		core->pipeline.MEM_WB.valid.D = false;
@@ -237,7 +265,7 @@ void doMemStage(Core *core) {
 	core->pipeline.MEM_WB.aluRes.D = core->pipeline.EX_MEM.aluRes.Q;
 	core->pipeline.MEM_WB.rd.D = core->pipeline.EX_MEM.rd.Q;
 
-	if (opcode == LW || opcode == SW || opcode == LL || opcode == SC) {
+	if (opcode == LW || opcode == SW || opcode == LL || opcode == SC) { // check if this instruction need to access the memory
 		memoryManage(core);
 	} 
 	else {
@@ -248,6 +276,9 @@ void doMemStage(Core *core) {
 	}
 }
 
+/**
+* simulate write back stage
+*/
 void doWriteBackStage(Core *core) {
 	if (!core->pipeline.MEM_WB.valid.Q) {
 		return;
@@ -258,14 +289,17 @@ void doWriteBackStage(Core *core) {
 	if (rd == 0 || rd == 1) { // Can't write to reg0 and reg1
 		return;
 	}
-	if (opcode == LW || opcode == LL || opcode == SC) {
+	if (opcode == LW || opcode == LL || opcode == SC) { // update registers based on memory instruction
 		core->registers[rd].D = core->pipeline.MEM_WB.memValue.Q;
 	}
-	else if (opcode >= ADD && opcode <= SRL) {
+	else if (opcode >= ADD && opcode <= SRL) { // update registers based on alu instruction
 		core->registers[rd].D = core->pipeline.MEM_WB.aluRes.Q;
 	}
 }
 
+/**
+* simulate full pipeline step
+*/
 void executeStep(Core *core) {
 	doWriteBackStage(core); 
 	doMemStage(core);		
@@ -282,6 +316,9 @@ void printPC(Core *core, bool valid, int value) {
 	else fprintf(core->traceFile, "%03X ", value);
 }
 
+/**
+* update the trace file
+*/
 void updateCoreTrace(Core *core) {
 	fprintf(core->traceFile, "%d ", core->clock->cycle);
 	printPC(core, !core->halt, core->PC.Q);
@@ -340,7 +377,7 @@ void core__init(Core *core,
 	fclose(ImemFile);
 }
 
-void printStatsFile(Core *core) { // FIXME: not counting clock cycles, and some other stats
+void printStatsFile(Core *core) { // TODO: (solved?) not counting clock cycles, and some other stats
 	FILE *statsFile = NULL;
 	fopen_s(&statsFile, core->statsFilepath, "w");
 	fprintf(statsFile, "cycles %d\n", core->clock->cycle + 1);

@@ -5,6 +5,9 @@
 
 #include "IO.h"
 
+/**
+* check if @parma filename exists
+*/
 void fileExists(char *filename) {
 	struct stat buffer;
 	if (stat(filename, &buffer) != 0) {
@@ -13,6 +16,9 @@ void fileExists(char *filename) {
 	}
 }
 
+/**
+* check if all relevant input files exist
+*/
 void checkFiles(char **filepaths) {
 	int fileIdx = 1;
 	while (filepaths[fileIdx] != NULL) {
@@ -24,6 +30,9 @@ void checkFiles(char **filepaths) {
 	assert(fileIdx == NUM_OF_FILENAMES);
 }
 
+/**
+* load values from the given file to the give array
+*/
 int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	int numOfLines = 0;
 	while (fscanf(file, "%x\n", &valuesArray[numOfLines++]) > 0 && numOfLines < size);
@@ -31,6 +40,9 @@ int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
 	return numOfLines - 1;
 }
 
+/**
+* write array to file
+*/
 void printArray(FILE *outputFile, int* valueArray, int size, bool newline, bool isFF) {
 	for (int i = 0; i < size; i++) {
 		int idx = isFF ? i * 2 : i;
@@ -40,6 +52,9 @@ void printArray(FILE *outputFile, int* valueArray, int size, bool newline, bool 
 	}
 }
 
+/**
+* create new file base on the data in the given array
+*/
 void createFileFromArray(char* filepath, int* valueArray, int size, bool newline, bool isFF) {
 	FILE *outputFile = NULL;
 	fopen_s(&outputFile, filepath, "w");

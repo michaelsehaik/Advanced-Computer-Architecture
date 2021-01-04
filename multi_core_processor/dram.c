@@ -8,12 +8,10 @@ void dram__update(DRAM *DRAM) {
 	}
 	else if (DRAM->bus->txn.command.Q == BUS_RD || DRAM->bus->txn.command.Q == BUS_RDX) {
 		if (DRAM->numOfWaitCycles < 0) {
-			//printf("DRAM: start countdown\n");
 			DRAM->numOfWaitCycles = DRAM_LATENCY - 1;
 		}
 		else if (DRAM->numOfWaitCycles == 0) {
 			int data = DRAM->mem[DRAM->bus->txn.address.Q];
-			//printf("DRAM: sending data\n");
 			bus__requestTXN(DRAM->bus, MAIN_MEMORY, FLUSH, DRAM->bus->txn.address.Q, data, true); //always granted
 		}
 	}

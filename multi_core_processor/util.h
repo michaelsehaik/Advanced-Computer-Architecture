@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+// simulate the clock
 typedef struct Clock {
 	int cycle;
 } Clock;

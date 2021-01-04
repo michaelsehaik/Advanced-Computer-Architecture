@@ -55,11 +55,6 @@ bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	cache->curOperation.address = address;
 	cache->curOperation.data = data;
 	bool loadOperation = isLoadOperation(&cache->curOperation);
-	//printf("cache %d: setting operation name: %d, addr =%d, data=%d\n", cache->origID, opName, address, data);
-
-	//printf("isLoadOperation=%d\n", isLoadOperation(&cache->curOperation));
-	//printf("isBlockInCache=%d\n", isBlockInCache(cache, set, tag));
-	//printf("isWriteReady=%d\n", isWriteReady(cache, set, tag));
 
 	if (checkSCFail(cache)) {
 		cache->curOperation.data = 0; // failure
@@ -90,11 +85,9 @@ bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 void loadToCache(Cache *cache, int set, int tag) {
 	if (isLoadOperation(&cache->curOperation)) {		
 		cache->TSRAM[set].MSIState = SHARED_S;
-		//printf("cache %d: SHARED_S set %d, tag %d, value: %d\n", cache->origID, set, tag, cache->TSRAM[set].MSIState);
 	}
 	else {
 		cache->TSRAM[set].MSIState = MODIFIED_S;
-		//printf("cache %d: MODIFIED_S set %d, tag %d, value: %d\n", cache->origID, set, tag, cache->TSRAM[set].MSIState);
 	}
 	cache->TSRAM[set].tag = tag;
 	cache->DSRAM[set] = cache->bus->txn.data.Q;
@@ -156,7 +149,6 @@ void cache__update(Cache *cache) {
 			break;
 		case WAIT_READ_S:
 			if (cache->bus->txn.command.Q == FLUSH && cache->bus->txn.address.Q == cache->curOperation.address) {
-				//printf("set =%x, tag  =%x, address=%x\n", set, tag, cache->curOperation.address);
 				loadToCache(cache, set, tag);
 				doOperation(cache, set);
 				cache->state = DATA_READY_S;

@@ -54,6 +54,10 @@ typedef struct Core {
 	bool pipelineIsEmpty;
 } Core;
 
+
+/**
+* initialize all core's components with starting values
+*/
 void core__init(Core *core,
 				MSI_BUS* bus,
 				OriginatorID origID,
@@ -64,6 +68,13 @@ void core__init(Core *core,
 				char *statsFilepath,
 				char *regoutFilepath,
 				Clock *clock);
+/**
+* update the core, simulating 1 clock cycle, including update the commands pipeline and relevant output files
+*/
 void core__update(Core *core);
+
+/**
+* the core ended its tasks, terminate all resorces + free memory, also write relevant output files.
+*/
 void core__terminate(Core *core);
 

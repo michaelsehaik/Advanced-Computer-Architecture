@@ -13,6 +13,7 @@ void pipeline__update(Pipeline* pipeline) {
 		register_DtoQ((DQ_FF*)(&pipeline->EX_MEM), sizeof(struct ExecuteMemoryReg) / sizeof(DQ_FF));
 	register_DtoQ((DQ_FF*)(&pipeline->MEM_WB), sizeof(struct MemoryWriteBackReg) / sizeof(DQ_FF));
 	
+	// TODO: delete this counts?
 	if (pipeline->decodeStall) {
 		//pipeline->decodeStallCount++;
 	}

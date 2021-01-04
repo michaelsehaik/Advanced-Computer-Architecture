@@ -20,11 +20,6 @@ typedef struct DRAM{
 	Clock *clock;
 } DRAM;
 
-/*
-	just a simple array for dram. Of course it should have init and print log functions.
-	need to be able to handle requests form bus
-*/
-
 void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilepath, Clock *clock);
 void dram__update(DRAM *DRAM);
 void dram__terminate(DRAM *DRAM);
