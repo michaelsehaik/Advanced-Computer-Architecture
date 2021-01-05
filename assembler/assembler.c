@@ -134,9 +134,7 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(LW, R2, R1, R14, 0x00 + 0x04);
 	addInstruction(LW, R3, R1, R14, 0x01 + 0x04);
 	addInstruction(ADD, R5, R6, R7, 0x0); //change location
-	if (addToPrevCalc) {
-		addInstruction(LW, R4, R11, R14, 0x0);//change location?
-	}
+	addInstruction(ADD, R11, R13, R1, 0x200 - MemOffset);//change location? init R11 = 0x200 + R13 (200 for 3'rd matrix location.
 	addInstruction(LW, R6, R1, R13, 0x100 + 0x40);
 	addInstruction(LW, R7, R1, R13, 0x110 + 0x40);
 	addInstruction(ADD, R10, R5, R10, 0x0);//change location?
@@ -149,7 +147,7 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(ADD, R5, R2, R3, 0x0); //change location
 
 	if (addToPrevCalc) {
-		addInstruction(ADD, R10, R10, R4, 0x0);//change location?
+		addInstruction(LW, R4, R11, R14, 0x0);//change location?
 	}
 	
 	addInstruction(LW, R2, R1, R13, 0x120 + 0x40);
@@ -157,11 +155,11 @@ void MM88(char* filename, int offsetR14, int offsetR13 , int MemOffset, int line
 	addInstruction(ADD, R10, R5, R10, 0x0);//change location?
 	addInstruction(MUL, R6, R6, R2, 0x00);
 	addInstruction(MUL, R7, R7, R3, 0x00);
-	addInstruction(ADD, R11, R13, R1, 0x200 - MemOffset);//change location? init R11 = 0x200 + R13 (200 for 3'rd matrix location.
+	if (addToPrevCalc) {
+		addInstruction(ADD, R10, R10, R4, 0x0);//change location?
+	}
 	addInstruction(ADD, R5, R6, R7, 0x0); //change location
 	addInstruction(ADD, R10, R5, R10, 0x0);//change location?
-
-
 
 
 	addInstruction(SW, R10, R11, R14, 0x10);

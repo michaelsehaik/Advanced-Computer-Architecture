@@ -48,11 +48,11 @@ int main(int argc, char **argv) {
 
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file, &clock);
-	printf("Proccessor Initialization Completed\n");
+	//printf("Proccessor Initialization Completed\n");
 
 	while (!done) {
 		done = true;
-		printf("Clock Cycle: %d\n", clock.cycle);
+		//printf("Clock Cycle: %d\n", clock.cycle);
 
 		busUpdate(&bus, cores, &DRAM);
 
