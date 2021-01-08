@@ -6,7 +6,7 @@
 #include "IO.h"
 
 /**
-* check if @parma filename exists
+* check if filename exists
 */
 void fileExists(char *filename) {
 	struct stat buffer;
@@ -31,9 +31,9 @@ void checkFiles(char **filepaths) {
 }
 
 /**
-* load values from the given file to the give array
+* load values from the given file to the given array
 */
-int loadArrayFromFile(FILE* file, int valuesArray[], int size) {
+int loadArrayFromFile(FILE* file, int *valuesArray, int size) {
 	int numOfLines = 0;
 	while (fscanf(file, "%x\n", &valuesArray[numOfLines++]) > 0 && numOfLines < size);
 	fseek(file, 0, SEEK_SET); // move pointer back to begginnig of file

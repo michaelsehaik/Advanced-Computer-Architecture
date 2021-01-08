@@ -1,5 +1,8 @@
 #include "dram.h"
 
+/**
+* handle bus transaction. return data on rd, store data on flush
+*/
 void dram__update(DRAM *DRAM) {
 	if (DRAM->bus->txn.command.Q == FLUSH && DRAM->bus->txn.origID.Q != MAIN_MEMORY) {
 		int address = DRAM->bus->txn.address.Q;
@@ -18,7 +21,9 @@ void dram__update(DRAM *DRAM) {
 	DRAM->numOfWaitCycles--;
 }
 
-
+/**
+* init dram struct
+*/
 void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilepath, Clock *clock) {
 	DRAM->bus = bus;
 	DRAM->clock = clock;
@@ -32,6 +37,9 @@ void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilep
 	fclose(meminFile);
 }
 
+/**
+* write output files on termination
+*/
 void dram__terminate(DRAM *DRAM) {
 	createFileFromArray(DRAM->memoutFilepath, DRAM->mem, DRAM->lastAddr + 1, true, false);
 }

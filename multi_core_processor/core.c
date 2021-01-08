@@ -339,7 +339,7 @@ void core__update(Core *core) {
 		core->PC.Q = core->PC.D;
 		if (core->halt && !core->pipeline.MEM_WB.valid.Q && core->cache.state == IDLE_S) {
 			core->pipelineIsEmpty = true;
-			core__terminate(core);
+			core->numOfCycles = core->clock->cycle+1;
 		}
 	}
 }
@@ -369,6 +369,7 @@ void core__init(Core *core,
 	core->pipelineIsEmpty = false;
 	core->regoutFilepath = regoutFilepath;
 	core->statsFilepath = statsFilepath;
+	core->numOfCycles = 0;
 
 	fopen_s(&core->traceFile, traceFilepath, "w");
 	FILE *ImemFile = NULL;
@@ -377,10 +378,10 @@ void core__init(Core *core,
 	fclose(ImemFile);
 }
 
-void printStatsFile(Core *core) { // TODO: (solved?) not counting clock cycles, and some other stats
+void printStatsFile(Core *core) {
 	FILE *statsFile = NULL;
 	fopen_s(&statsFile, core->statsFilepath, "w");
-	fprintf(statsFile, "cycles %d\n", core->clock->cycle + 1);
+	fprintf(statsFile, "cycles %d\n", core->numOfCycles);
 	fprintf(statsFile, "instructions %d\n", core->instructionCount);
 	fprintf(statsFile, "read_hit %d\n", core->cache.readHitCount);
 	fprintf(statsFile, "write_hit %d\n", core->cache.writeHitCount);

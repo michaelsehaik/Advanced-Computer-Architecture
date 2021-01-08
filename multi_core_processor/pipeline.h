@@ -60,9 +60,10 @@ typedef struct Pipeline {
 	int memStallCount;
 } Pipeline;
 
-
+/**
+* init pipline struct
+*/
 void pipeline__init(Pipeline *pipeline);
-
 /**
 * update pipeline registers, for each register, move D values to Q values
 */

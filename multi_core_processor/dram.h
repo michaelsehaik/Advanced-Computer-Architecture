@@ -20,6 +20,15 @@ typedef struct DRAM{
 	Clock *clock;
 } DRAM;
 
+/**
+* init dram struct
+*/
 void dram__init(DRAM *DRAM, MSI_BUS *bus, char *meminFilepath, char *memoutFilepath, Clock *clock);
+/**
+* handle bus transaction. return data on rd, store data on flush
+*/
 void dram__update(DRAM *DRAM);
+/**
+* write output files on termination
+*/
 void dram__terminate(DRAM *DRAM);

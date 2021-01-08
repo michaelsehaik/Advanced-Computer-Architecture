@@ -49,6 +49,7 @@ typedef struct Core {
 	char *statsFilepath;
 	char* regoutFilepath;
 	int instructionCount;
+	int numOfCycles;
 	Clock *clock;
 	bool halt;
 	bool pipelineIsEmpty;

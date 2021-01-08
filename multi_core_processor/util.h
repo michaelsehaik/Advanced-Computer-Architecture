@@ -8,7 +8,7 @@ typedef struct Clock {
 } Clock;
 
 typedef struct LinkRegister {
-	bool flag;
+	bool flag; // if flag is true then address is on watch
 	int address;
 } LinkRegister;
 

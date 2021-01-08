@@ -2,6 +2,9 @@
 
 #include "cache.h"
 
+/**
+* auxilary functions
+*/
 bool isBlockInCache(Cache *cache, int set, int tag) {
 	return cache->TSRAM[set].MSIState != INVALID_S && tag == cache->TSRAM[set].tag;
 }
@@ -19,9 +22,12 @@ int getFullAddress(int set, int tag) {
 }
 
 bool isWriteReady(Cache *cache, int set, int tag) {
-	return (isBlockInCache(cache, set, tag) && cache->TSRAM[set].MSIState == MODIFIED_S);
+	return (tag == cache->TSRAM[set].tag && cache->TSRAM[set].MSIState == MODIFIED_S);
 }
 
+/**
+* return the data to core,set success on SC operations
+*/
 bool doOperation(Cache *cache, int set) {
 	if (isLoadOperation(&cache->curOperation)) {
 		cache->curOperation.data = cache->DSRAM[set];
@@ -34,6 +40,9 @@ bool doOperation(Cache *cache, int set) {
 	}
 }
 
+/**
+* check if someone wrote to adress on watch
+*/
 bool checkSCFail(Cache *cache) {
 	if (cache->curOperation.name == STORE_CONDITIONAL &&
 		!(cache->linkRegister.address == cache->curOperation.address && cache->linkRegister.flag)) { 
@@ -42,11 +51,17 @@ bool checkSCFail(Cache *cache) {
 	return false;
 }
 
+/**
+* set watch on address
+*/
 void setLinkRegister(LinkRegister *reg, int address) {
 	reg->address = address;
 	reg->flag = true;
 }
 
+/**
+* handle new memory operation from core
+*/
 bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName) { 
 	int set = address % CACHE_SIZE;
 	int tag = address / CACHE_SIZE;
@@ -66,7 +81,6 @@ bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 
 		if (loadOperation) cache->readHitCount++;
 		else cache->writeHitCount++;
-
 		doOperation(cache, set);
 		return false;  // no need to wait for FSM
 	}
@@ -82,6 +96,9 @@ bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION
 	return true; // need to wait for FSM
 }
 
+/**
+* load data to SRAM, and update MSI state
+*/
 void loadToCache(Cache *cache, int set, int tag) {
 	if (isLoadOperation(&cache->curOperation)) {		
 		cache->TSRAM[set].MSIState = SHARED_S;
@@ -93,6 +110,9 @@ void loadToCache(Cache *cache, int set, int tag) {
 	cache->DSRAM[set] = cache->bus->txn.data.Q;
 }
 
+/**
+* listen to transaction on bus.
+*/
 void cache__snoop(Cache *cache) {
 	int set = cache->bus->txn.address.Q % CACHE_SIZE;
 	int tag = cache->bus->txn.address.Q / CACHE_SIZE;
@@ -101,16 +121,16 @@ void cache__snoop(Cache *cache) {
 	if (cache->bus->txn.origID.Q == cache->origID || !isBlockInCache) return;
 	switch (cache->bus->txn.command.Q) {
 		case BUS_RD:
-			if (isWriteReady(cache, set, tag)) {
+			if (isWriteReady(cache, set, tag)) { // data on modified- flush
 				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set], true); //always granted
 				cache->TSRAM[set].MSIState = SHARED_S;
 			}
 			break;
 		case BUS_RDX:
-			if (isWriteReady(cache, set, tag)) {
+			if (isWriteReady(cache, set, tag)) { // data on modified- flush
 				bus__requestTXN(cache->bus, cache->origID, FLUSH, cache->bus->txn.address.Q, cache->DSRAM[set], true); //always granted
 			}
-			if (cache->bus->txn.address.Q == cache->linkRegister.address) {
+			if (cache->bus->txn.address.Q == cache->linkRegister.address) { // linked register
 				cache->linkRegister.flag = false;
 			}
 			cache->TSRAM[set].MSIState = INVALID_S;
@@ -118,6 +138,9 @@ void cache__snoop(Cache *cache) {
 	}
 }
 
+/**
+* handle operation according to cache FSM
+*/
 void cache__update(Cache *cache) {
 	BusTransaction txn;
 	BusCommand command;
@@ -126,14 +149,14 @@ void cache__update(Cache *cache) {
 	int flushAddr;
 
 	switch (cache->state) {
-		case FLUSH_S:
+		case FLUSH_S: // empty the taken set
 			flushAddr = getFullAddress(set, cache->TSRAM[set].tag);
 			if (bus__requestTXN(cache->bus, cache->origID, FLUSH, flushAddr, cache->DSRAM[set], false)) {
 				cache->TSRAM[set].MSIState = SHARED_S;
 				cache->state = SEND_READ_S;
 			}
 			break;
-		case SEND_READ_S:
+		case SEND_READ_S: // send read request
 			if (checkSCFail(cache)) {
 				cache->curOperation.data = 0; // failure
 				cache->state = DATA_READY_S;
@@ -147,7 +170,7 @@ void cache__update(Cache *cache) {
 				}
 			}
 			break;
-		case WAIT_READ_S:
+		case WAIT_READ_S: // wait for bus response
 			if (cache->bus->txn.command.Q == FLUSH && cache->bus->txn.address.Q == cache->curOperation.address) {
 				loadToCache(cache, set, tag);
 				doOperation(cache, set);
@@ -160,6 +183,9 @@ void cache__update(Cache *cache) {
 	}
 }
 
+/**
+* init cache struct
+*/
 void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath) {
 	memset(cache->DSRAM, 0, CACHE_SIZE * sizeof(int));
 	memset(cache->TSRAM, 0, CACHE_SIZE * sizeof(TSRAM_CELL));
@@ -175,6 +201,9 @@ void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFil
 	cache->linkRegister.flag = false;
 }
 
+/**
+* print TSRAM to file
+*/
 void printTSRAM(Cache *cache) {
 	FILE *outputFile = NULL;
 	fopen_s(&outputFile, cache->tsramFilepath, "w");
@@ -184,6 +213,9 @@ void printTSRAM(Cache *cache) {
 	fclose(outputFile);
 }
 
+/**
+* create output files on termination
+*/
 void cache__terminate(Cache *cache) {
 	createFileFromArray(cache->dsramFilepath, cache->DSRAM, CACHE_SIZE, true, false);
 	printTSRAM(cache);

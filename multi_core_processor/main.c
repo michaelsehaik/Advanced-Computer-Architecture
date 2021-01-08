@@ -8,6 +8,9 @@
 #include "core.h"
 #include "IO.h"
 
+/**
+* load input files and init structs
+*/
 void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout_file, char *regout_file, Clock *clock) {
 	checkFiles(filepaths);
 	bus__init(bus, filepaths[BUSTRACE_FILE], clock);
@@ -24,6 +27,9 @@ void init(char **filepaths, Core cores[], MSI_BUS *bus, DRAM *DRAM, char *memout
 	}
 }
 
+/**
+* call bus update methods according to correct order
+*/
 void busUpdate(MSI_BUS *bus, Core cores[], DRAM *DRAM) {
 	bus__update(bus);
 	for (int i = 0; i < 4; i++) {
@@ -32,12 +38,13 @@ void busUpdate(MSI_BUS *bus, Core cores[], DRAM *DRAM) {
 	dram__update(DRAM);
 	for (int i = 0; i < 4; i++) {
 		cache__update(&cores[i].cache);
-		//printf("cache %d: state=%d, MSI[0]=%d\n", i, cores[i].cache.state, cores[i].cache.TSRAM[0].MSIState);
-		//printf("cache %d: address=%d, flag =%d\n", i, cores[i].cache.linkRegister->address, cores[i].cache.linkRegister->flag);
 	}
 	bus__updateTransaction(bus);
 }
 
+/**
+* main loop
+*/
 int main(int argc, char **argv) {
 	Core cores[4];
 	MSI_BUS bus;
@@ -48,27 +55,22 @@ int main(int argc, char **argv) {
 
 	if (argc == 1) init(default_args, cores, &bus, &DRAM, memout_file, regout_file, &clock);
 	else init(argv, cores, &bus, &DRAM, memout_file, regout_file, &clock);
-	//printf("Proccessor Initialization Completed\n");
 
 	while (!done) {
 		done = true;
-		//printf("Clock Cycle: %d\n", clock.cycle);
-
 		busUpdate(&bus, cores, &DRAM);
-
 		for (int i = 0; i < 4; i++) {
 			core__update(&cores[i]);
 			done &= (cores[i].pipelineIsEmpty); // false if at least one core hasn't finished yet
 		}
-		//printf("cache0 state=%d, addr: %x, MSI2=%x, tag=%x\n", cores[0].cache.state, cores[0].cache.curOperation.address, \
-			cores[0].cache.TSRAM[2].MSIState, cores[0].cache.TSRAM[2].tag);
-
 		clock.cycle++;
-		//if (clock.cycle > 10000) break;
 	}
 
 	bus__terminate(&bus);
 	dram__terminate(&DRAM);
+	for (int i = 0; i < 4; i++) {
+		core__terminate(&cores[i]);
+	}
 
 	return 0;
 }

@@ -31,14 +31,23 @@ typedef struct MSI_BUS {
 	Clock *clock;
 } MSI_BUS;
 
-/*
-	struct for bus which is shared by srams and dram (see some fields in pdf).
-	has methods for trace, sram/dram send request but they are not always valuated.
-	the struct updates after we simulated sram+dram for a clock cycle. 
+/**
+* set bus value for next clock cycle
 */
-
 void bus__updateTransaction(MSI_BUS *bus);
+/**
+* ask bus to set a transaction. will be granted according to arbitration
+*/
 bool bus__requestTXN(MSI_BUS *bus, OriginatorID origID, BusCommand command, int address, int data, bool override);
+/**
+* if bus was on flush, next cycle bus is available
+*/
 void bus__update(MSI_BUS *bus);
+/**
+* init bus struct
+*/
 void bus__init(MSI_BUS *bus, char *traceFilepath, Clock *clock);
+/**
+* save output files on termination
+*/
 void bus__terminate(MSI_BUS *bus);

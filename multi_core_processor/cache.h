@@ -8,7 +8,6 @@
 #include "IO.h"
 
 #define CACHE_SIZE 256
-
 #define INDEX_WIDTH 8
 #define TAG_WIDTH 12 
 #define MSI_WIDTH 2
@@ -19,7 +18,7 @@ enum MSI_STATE {
 	MODIFIED_S
 };
 
-typedef enum CACHE_OPERATION_NAME{
+typedef enum CACHE_OPERATION_NAME{ 
 	LOAD_WORD,
 	LOAD_LINKED,
 	STORE_WORD,
@@ -32,7 +31,7 @@ typedef struct CacheOperation {
 	int address;
 } CacheOperation;
 
-typedef enum CACHE_STATE {
+typedef enum CACHE_STATE { // used by cache FSM
 	IDLE_S,
 	FLUSH_S,
 	SEND_READ_S,
@@ -61,20 +60,23 @@ typedef struct Cache {
 	int writeMissCount;
 } Cache;
 
-/*
-	structs for DSRAM and TSRAM.
-	this module need also a pointer to the bus struct.
-	methods for handling requests from cores, and method to handle bus updates (generate a request, or answer one if it has the data)
-	these modules will have in the future logic to handle cache misses.
-	has status struct to keep track over:
-		1. number of cache read hits
-		2. number of cache write hits
-		3. number of cache read misses
-		4. number of cache write misses
+/**
+* handle new memory operation from core
 */
-
 bool cache__setNewOperation(Cache *cache, int address, int data, CACHE_OPERATION_NAME opName);
+/**
+* listen to transaction on bus.
+*/
 void cache__snoop(Cache *cache);
+/**
+* init cache struct
+*/
 void cache__init(Cache *cache, MSI_BUS* bus, OriginatorID origID, char *dsramFilepath, char *tsramFilepath);
+/**
+* handle operation according to cache FSM
+*/
 void cache__update(Cache *cache);
+/**
+* create output files on termination
+*/
 void cache__terminate(Cache *cache);
